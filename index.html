@@ -4,546 +4,590 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>XAUUSD SMC Scanner</title>
+<title>XAUUSD SMC Scanner V2</title>
 <script src="https://unpkg.com/lightweight-charts@4.2.2/dist/lightweight-charts.standalone.production.js"></script>
 <style>
 :root {
-  --bg:#080d16; --panel:#111a29; --border:#243247;
-  --text:#e8eef8; --muted:#8b9bb2; --gold:#f4c75e;
-  --green:#21c995; --red:#ff6577; --blue:#62a9ff;
+ --bg:#080d16;--panel:#111a29;--border:#293950;
+ --text:#e8eef8;--muted:#91a1b8;--gold:#f4c75e;
+ --green:#21c995;--red:#ff6577;--blue:#62a9ff;
 }
-* {box-sizing:border-box}
-body {
-  margin:0; background:var(--bg); color:var(--text);
-  font-family:Arial, sans-serif;
-}
-header {
-  padding:20px 5%; border-bottom:1px solid var(--border);
-  display:flex; justify-content:space-between; align-items:center;
-  flex-wrap:wrap; gap:12px;
-}
-.logo {font-size:22px;font-weight:bold;color:var(--gold)}
-.status {font-size:12px;color:var(--muted)}
-main {max-width:1400px;margin:auto;padding:22px 4%}
-.grid {
-  display:grid;grid-template-columns:repeat(4,1fr);
-  gap:14px;margin-bottom:16px;
-}
-.panel {
-  background:var(--panel);border:1px solid var(--border);
-  border-radius:12px;padding:17px;
-}
-.label {font-size:12px;color:var(--muted);margin-bottom:10px}
-.value {font-size:25px;font-weight:bold}
-.gold {color:var(--gold)}
-.green {color:var(--green)}
-.red {color:var(--red)}
-.muted {color:var(--muted)}
-.small {font-size:12px;color:var(--muted);margin-top:8px}
-.toolbar {
-  display:flex;align-items:center;justify-content:space-between;
-  flex-wrap:wrap;gap:12px;margin-bottom:14px;
-}
-button,select {
-  background:#1a2940;color:var(--text);
-  border:1px solid var(--border);border-radius:7px;
-  padding:9px 13px;cursor:pointer;
-}
-button.active {background:#8a6925;color:white;border-color:var(--gold)}
-#chart {height:440px;width:100%}
-.chart-panel {padding:12px}
-.analysis {
-  display:grid;grid-template-columns:repeat(2,1fr);
-  gap:14px;margin-top:16px;
-}
-.signal {
-  font-size:28px;font-weight:bold;margin:8px 0;
-}
-.tag {
-  display:inline-block;padding:5px 9px;border-radius:5px;
-  background:#1c2b42;font-size:12px;margin:4px 4px 4px 0;
-}
-.item {
-  display:flex;justify-content:space-between;gap:12px;
-  padding:10px 0;border-bottom:1px solid var(--border);
-  font-size:13px;
-}
-.item:last-child {border:0}
-.footer {
-  text-align:center;color:var(--muted);
-  font-size:11px;padding:25px 10px;line-height:1.7;
-}
-#message {font-size:12px;color:var(--muted);margin-top:8px}
-@media(max-width:800px) {
-  .grid {grid-template-columns:repeat(2,1fr)}
-  .analysis {grid-template-columns:1fr}
-  #chart {height:350px}
-}
-@media(max-width:420px) {
-  .value {font-size:20px}
-  main {padding:15px 3%}
-}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--text);font-family:Arial,sans-serif}
+header{padding:19px 5%;border-bottom:1px solid var(--border);display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:12px}
+.logo{font-size:21px;font-weight:bold;color:var(--gold)}
+.status{font-size:12px;color:var(--muted)}
+main{max-width:1450px;margin:auto;padding:22px 4%}
+.grid{display:grid;grid-template-columns:repeat(4,1fr);gap:13px;margin-bottom:15px}
+.panel{background:var(--panel);border:1px solid var(--border);border-radius:12px;padding:16px}
+.label{font-size:11px;color:var(--muted);letter-spacing:.6px;margin-bottom:10px}
+.value{font-size:24px;font-weight:bold}
+.gold{color:var(--gold)}.green{color:var(--green)}.red{color:var(--red)}
+.muted{color:var(--muted)}
+.small{font-size:12px;color:var(--muted);line-height:1.6;margin-top:7px}
+.toolbar{display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap;margin-bottom:13px}
+button,select{background:#1b2b43;color:var(--text);border:1px solid var(--border);border-radius:7px;padding:9px 12px;cursor:pointer}
+button:hover{border-color:var(--gold)}
+#chart{height:440px;width:100%}
+.analysis{display:grid;grid-template-columns:repeat(2,1fr);gap:14px;margin-top:15px}
+.signal{font-size:29px;font-weight:bold;margin:8px 0}
+.tag{display:inline-block;padding:5px 9px;border-radius:5px;background:#203149;font-size:11px;margin:4px 3px 4px 0}
+.item{display:flex;justify-content:space-between;gap:12px;padding:10px 0;border-bottom:1px solid var(--border);font-size:13px}
+.item:last-child{border:0}
+.tf-grid{display:grid;grid-template-columns:repeat(5,1fr);gap:8px}
+.tf-card{background:#172438;border:1px solid var(--border);padding:12px 7px;border-radius:8px;text-align:center}
+.tf-name{font-size:12px;color:var(--muted)}
+.tf-bias{font-size:14px;font-weight:bold;margin-top:8px}
+.zone-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:10px}
+.zone{background:#172438;border-radius:8px;padding:12px}
+.zone strong{display:block;margin-top:7px;font-size:16px}
+.footer{text-align:center;color:var(--muted);font-size:11px;padding:25px;line-height:1.7}
+#message{font-size:12px;color:var(--muted);margin-top:8px}
+@media(max-width:800px){.grid{grid-template-columns:repeat(2,1fr)}.analysis{grid-template-columns:1fr}#chart{height:350px}}
+@media(max-width:450px){.tf-grid{grid-template-columns:repeat(3,1fr)}.zone-grid{grid-template-columns:1fr}.value{font-size:20px}main{padding:14px 3%}}
 </style>
 </head>
 <body>
 
 <header>
-  <div class="logo">◆ XAUUSD SMC SCANNER</div>
-  <div class="status" id="connection">CONNECTING TO MARKET DATA...</div>
+ <div class="logo">◆ XAUUSD SMC SCANNER V2</div>
+ <div class="status" id="connection">CONNECTING...</div>
 </header>
 
 <main>
-  <div class="grid">
-    <div class="panel">
-      <div class="label">XAUUSD SPOT PRICE</div>
-      <div class="value gold" id="price">Loading...</div>
-      <div class="small" id="priceTime">Waiting for data</div>
-    </div>
-    <div class="panel">
-      <div class="label">MARKET BIAS</div>
-      <div class="value" id="bias">--</div>
-      <div class="small">Based on recent swing structure</div>
-    </div>
-    <div class="panel">
-      <div class="label">TIMEFRAME</div>
-      <div class="value gold" id="tfLabel">M5</div>
-      <div class="small" id="candleCount">No candles loaded</div>
-    </div>
-    <div class="panel">
-      <div class="label">DATA STATUS</div>
-      <div class="value" id="dataStatus">--</div>
-      <div class="small" id="dataSource">XAUS API</div>
-    </div>
+ <div class="grid">
+  <div class="panel">
+   <div class="label">XAUUSD SPOT PRICE</div>
+   <div class="value gold" id="price">Loading...</div>
+   <div class="small" id="priceTime">Waiting for data</div>
+  </div>
+  <div class="panel">
+   <div class="label">OVERALL MARKET BIAS</div>
+   <div class="value" id="overallBias">--</div>
+   <div class="small" id="biasDetail">Multi-timeframe analysis</div>
+  </div>
+  <div class="panel">
+   <div class="label">CURRENT SIGNAL</div>
+   <div class="value gold" id="signal">WAIT</div>
+   <div class="small" id="signalReason">Analyzing setup...</div>
+  </div>
+  <div class="panel">
+   <div class="label">DATA STATUS</div>
+   <div class="value" id="dataStatus">--</div>
+   <div class="small">XAUS spot reference feed</div>
+  </div>
+ </div>
+
+ <div class="panel">
+  <div class="toolbar">
+   <strong>XAUUSD Candlestick Chart</strong>
+   <div>
+    <select id="timeframe">
+     <option value="5m">M5</option>
+     <option value="15m">M15</option>
+     <option value="30m">M30</option>
+     <option value="60m">H1</option>
+     <option value="240m">H4</option>
+    </select>
+    <button id="refreshBtn">Refresh</button>
+   </div>
+  </div>
+  <div id="chart"></div>
+  <div id="message">Loading candles...</div>
+ </div>
+
+ <div class="panel" style="margin-top:15px">
+  <div class="label">MULTI-TIMEFRAME MARKET BIAS</div>
+  <div class="tf-grid">
+   <div class="tf-card"><div class="tf-name">M5</div><div class="tf-bias" id="bias5">--</div></div>
+   <div class="tf-card"><div class="tf-name">M15</div><div class="tf-bias" id="bias15">--</div></div>
+   <div class="tf-card"><div class="tf-name">M30</div><div class="tf-bias" id="bias30">--</div></div>
+   <div class="tf-card"><div class="tf-name">H1</div><div class="tf-bias" id="bias60">--</div></div>
+   <div class="tf-card"><div class="tf-name">H4</div><div class="tf-bias" id="bias240">--</div></div>
+  </div>
+  <div class="small" id="mtfSummary">Waiting for timeframe data...</div>
+ </div>
+
+ <div class="analysis">
+  <div class="panel">
+   <div class="label">SMART MONEY STRUCTURE</div>
+   <div class="item"><span>Market Structure</span><b id="structure">--</b></div>
+   <div class="item"><span>Liquidity Sweep</span><b id="sweep">--</b></div>
+   <div class="item"><span>Latest FVG</span><b id="fvg">--</b></div>
+   <div class="item"><span>Order Block</span><b id="ob">--</b></div>
+   <div class="item"><span>Premium / Discount</span><b id="pd">--</b></div>
   </div>
 
-  <div class="panel chart-panel">
-    <div class="toolbar">
-      <strong> XAUUSD · Candlestick Chart</strong>
-      <div>
-        <select id="timeframe">
-          <option value="5m">M5</option>
-          <option value="15m">M15</option>
-          <option value="30m">M30</option>
-          <option value="60m">H1</option>
-        </select>
-        <button id="refreshBtn">Refresh</button>
-      </div>
-    </div>
-    <div id="chart"></div>
-    <div id="message">Loading chart data...</div>
+  <div class="panel">
+   <div class="label">ENTRY & RISK MANAGEMENT</div>
+   <div class="item"><span>Entry</span><b id="entry">--</b></div>
+   <div class="item"><span>Stop Loss</span><b id="sl">--</b></div>
+   <div class="item"><span>Take Profit 1 (1R)</span><b id="tp1">--</b></div>
+   <div class="item"><span>Take Profit 2 (2R)</span><b id="tp2">--</b></div>
+   <div class="item"><span>Take Profit 3 (3R)</span><b id="tp3">--</b></div>
+   <div class="small" id="riskNote">Risk levels are estimates, not broker orders.</div>
   </div>
 
-  <div class="analysis">
-    <div class="panel">
-      <div class="label">SMC TRADE SETUP</div>
-      <div class="signal muted" id="signal">WAIT</div>
-      <div id="signalReason" class="small">Analyzing market structure...</div>
-      <div style="margin-top:14px">
-        <span class="tag" id="structureTag">Structure: --</span>
-        <span class="tag" id="fvgTag">FVG: --</span>
-        <span class="tag" id="obTag">Order Block: --</span>
-      </div>
-    </div>
-
-    <div class="panel">
-      <div class="label">KEY MARKET LEVELS</div>
-      <div class="item"><span>Recent Swing High</span><b id="swingHigh">--</b></div>
-      <div class="item"><span>Recent Swing Low</span><b id="swingLow">--</b></div>
-      <div class="item"><span>Resistance / Liquidity</span><b id="resistance">--</b></div>
-      <div class="item"><span>Support / Liquidity</span><b id="support">--</b></div>
-    </div>
-
-    <div class="panel">
-      <div class="label">FAIR VALUE GAP (FVG)</div>
-      <div class="item"><span>Latest FVG</span><b id="fvgDirection">--</b></div>
-      <div class="item"><span>FVG Lower</span><b id="fvgLow">--</b></div>
-      <div class="item"><span>FVG Upper</span><b id="fvgHigh">--</b></div>
-      <div class="small">Three-candle imbalance detection</div>
-    </div>
-
-    <div class="panel">
-      <div class="label">ORDER BLOCK</div>
-      <div class="item"><span>Latest OB</span><b id="obDirection">--</b></div>
-      <div class="item"><span>OB Low</span><b id="obLow">--</b></div>
-      <div class="item"><span>OB High</span><b id="obHigh">--</b></div>
-      <div class="small">Heuristic detection from recent structure breaks</div>
-    </div>
+  <div class="panel">
+   <div class="label">FAIR VALUE GAP</div>
+   <div class="zone-grid">
+    <div class="zone"><span class="small">Direction</span><strong id="fvgDirection">--</strong></div>
+    <div class="zone"><span class="small">Lower Price</span><strong id="fvgLow">--</strong></div>
+    <div class="zone"><span class="small">Upper Price</span><strong id="fvgHigh">--</strong></div>
+   </div>
+   <div class="small">Three-candle imbalance detection. The latest detected gap is displayed.</div>
   </div>
 
-  <div class="panel" style="margin-top:16px">
-    <div class="label">MARKET ANALYSIS NOTES</div>
-    <div id="notes" class="small">Waiting for candles...</div>
+  <div class="panel">
+   <div class="label">ORDER BLOCK</div>
+   <div class="zone-grid">
+    <div class="zone"><span class="small">Direction</span><strong id="obDirection">--</strong></div>
+    <div class="zone"><span class="small">Lower Price</span><strong id="obLow">--</strong></div>
+    <div class="zone"><span class="small">Upper Price</span><strong id="obHigh">--</strong></div>
+   </div>
+   <div class="small">Last opposing candle before a detected structure break.</div>
   </div>
+
+  <div class="panel">
+   <div class="label">PREMIUM / DISCOUNT ZONE</div>
+   <div class="item"><span>Range High</span><b id="rangeHigh">--</b></div>
+   <div class="item"><span>Equilibrium (50%)</span><b id="equilibrium">--</b></div>
+   <div class="item"><span>Range Low</span><b id="rangeLow">--</b></div>
+   <div class="item"><span>Current Zone</span><b id="currentZone">--</b></div>
+  </div>
+
+  <div class="panel">
+   <div class="label">LIQUIDITY LEVELS</div>
+   <div class="item"><span>Recent Swing High</span><b id="swingHigh">--</b></div>
+   <div class="item"><span>Recent Swing Low</span><b id="swingLow">--</b></div>
+   <div class="item"><span>Buy-side Liquidity</span><b id="buyLiquidity">--</b></div>
+   <div class="item"><span>Sell-side Liquidity</span><b id="sellLiquidity">--</b></div>
+  </div>
+ </div>
+
+ <div class="panel" style="margin-top:15px">
+  <div class="label">SCANNER ANALYSIS</div>
+  <div class="small" id="notes">Waiting for market data...</div>
+ </div>
 </main>
 
 <div class="footer">
-  XAUUSD SMC SCANNER · Educational analysis tool<br>
-  Data provider: XAUS · Prices are indicative spot reference prices, not broker quotes.<br>
-  Signals are algorithmic estimates, not financial advice or guaranteed trading results.
+ XAUUSD SMC SCANNER V2 · Educational analysis tool<br>
+ Data source: XAUS API · Indicative spot reference price, not broker Bid/Ask.<br>
+ Automated technical analysis is heuristic and may produce false signals.<br>
+ Not financial advice. Always verify with your broker and manage risk.
 </div>
 
 <script>
-const API = "https://xaus.com/api/v1";
-const $ = id => document.getElementById(id);
+const API="https://xaus.com/api/v1";
+const $=id=>document.getElementById(id);
 
-let chart, candleSeries;
-let currentCandles = [];
-let lastSpot = null;
-
-const timeframeSettings = {
-  "5m":  {range:"1d", interval:"5m"},
-  "15m": {range:"5d", interval:"15m"},
-  "30m": {range:"1mo", interval:"30m"},
-  "60m": {range:"3mo", interval:"60m"}
+const configs={
+ "5m":{range:"1d",interval:"5m"},
+ "15m":{range:"5d",interval:"15m"},
+ "30m":{range:"1mo",interval:"30m"},
+ "60m":{range:"3mo",interval:"60m"},
+ "240m":{range:"1y",interval:"60m"}
 };
 
-function fmt(value) {
-  return Number.isFinite(value)
-    ? value.toLocaleString("en-US",{minimumFractionDigits:2,maximumFractionDigits:2})
-    : "--";
+let chart,candleSeries;
+let currentCandles=[];
+let spotPrice=null;
+let overlayLines=[];
+let refreshBusy=false;
+
+function fmt(n){
+ return Number.isFinite(n)
+  ? Number(n).toLocaleString("en-US",{minimumFractionDigits:2,maximumFractionDigits:2})
+  :"--";
+}
+function put(id,value){$(id).textContent=value;}
+function colorBias(id,bias){
+ put(id,bias);
+ $(id).style.color=bias==="BULLISH"?"#21c995":
+  bias==="BEARISH"?"#ff6577":"#f4c75e";
 }
 
-function setText(id, value) {
-  $(id).textContent = value;
+function initChart(){
+ const el=$("chart");
+ chart=LightweightCharts.createChart(el,{
+  width:el.clientWidth,height:440,
+  layout:{background:{color:"#111a29"},textColor:"#aab8cc"},
+  grid:{vertLines:{color:"#1d2a3d"},horzLines:{color:"#1d2a3d"}},
+  rightPriceScale:{borderColor:"#34445b"},
+  timeScale:{borderColor:"#34445b",timeVisible:true},
+  crosshair:{mode:1}
+ });
+ candleSeries=chart.addCandlestickSeries({
+  upColor:"#21c995",downColor:"#ff6577",
+  borderUpColor:"#21c995",borderDownColor:"#ff6577",
+  wickUpColor:"#21c995",wickDownColor:"#ff6577"
+ });
+ new ResizeObserver(()=>chart.applyOptions({width:el.clientWidth})).observe(el);
 }
 
-function initChart() {
-  const el = $("chart");
-  chart = LightweightCharts.createChart(el, {
-    width: el.clientWidth,
-    height: 440,
-    layout: {
-      background:{color:"#111a29"},
-      textColor:"#aab8cc"
-    },
-    grid: {
-      vertLines:{color:"#1d2a3d"},
-      horzLines:{color:"#1d2a3d"}
-    },
-    rightPriceScale:{borderColor:"#34445b"},
-    timeScale:{
-      borderColor:"#34445b",
-      timeVisible:true,
-      secondsVisible:false
-    },
-    crosshair:{mode:1}
-  });
+function normalizeCandles(json){
+ let rows=Array.isArray(json)?json:
+  json.points||json.data||json.candles||json.results||json.chart||[];
 
-  candleSeries = chart.addCandlestickSeries({
-    upColor:"#21c995",
-    downColor:"#ff6577",
-    borderUpColor:"#21c995",
-    borderDownColor:"#ff6577",
-    wickUpColor:"#21c995",
-    wickDownColor:"#ff6577"
-  });
-
-  new ResizeObserver(() => {
-    chart.applyOptions({width:el.clientWidth});
-  }).observe(el);
+ return rows.map(x=>{
+  let t=x.t??x.time??x.timestamp??x.date;
+  if(typeof t==="string")t=Math.floor(new Date(t).getTime()/1000);
+  else if(Number(t)>100000000000)t=Math.floor(Number(t)/1000);
+  else t=Number(t);
+  return {
+   time:t,open:Number(x.o??x.open),
+   high:Number(x.h??x.high),low:Number(x.l??x.low),
+   close:Number(x.c??x.close)
+  };
+ }).filter(x=>Number.isFinite(x.time)&&Number.isFinite(x.open)&&
+  Number.isFinite(x.high)&&Number.isFinite(x.low)&&Number.isFinite(x.close))
+ .sort((a,b)=>a.time-b.time)
+ .filter((x,i,a)=>i===0||x.time!==a[i-1].time);
 }
 
-function normalizeCandles(json) {
-  let rows = [];
-  if (Array.isArray(json)) rows = json;
-  else {
-    rows = json.points || json.data || json.candles ||
-           json.results || json.chart || [];
+// Build H4 candles by grouping four consecutive UTC H1 candles.
+function makeH4(hourly){
+ const groups=new Map();
+ for(const c of hourly){
+  const bucket=Math.floor(c.time/14400)*14400;
+  if(!groups.has(bucket))groups.set(bucket,[]);
+  groups.get(bucket).push(c);
+ }
+ return [...groups.entries()].map(([time,arr])=>{
+  arr.sort((a,b)=>a.time-b.time);
+  return {
+   time,open:arr[0].open,
+   high:Math.max(...arr.map(x=>x.high)),
+   low:Math.min(...arr.map(x=>x.low)),
+   close:arr[arr.length-1].close
+  };
+ }).filter(x=>Number.isFinite(x.close)).sort((a,b)=>a.time-b.time);
+}
+
+async function fetchCandles(tf){
+ const cfg=configs[tf];
+ const url=`${API}/chart?symbol=xau&range=${cfg.range}&interval=${cfg.interval}`;
+ const res=await fetch(url);
+ if(!res.ok)throw new Error(tf+" API HTTP "+res.status);
+ const json=await res.json();
+ const data=normalizeCandles(json);
+ if(tf==="240m")return makeH4(data);
+ return data;
+}
+
+async function loadSpot(){
+ try{
+  const res=await fetch(API+"/spot?compact=1");
+  if(!res.ok)throw new Error("HTTP "+res.status);
+  const data=await res.json();
+  const price=Number(data.spot_usd_oz??data.xau?.price);
+  if(!Number.isFinite(price))throw new Error("Price unavailable");
+  spotPrice=price;
+  put("price","$"+fmt(price));
+  const asOf=data.price_as_of||data.updated_at;
+  put("priceTime",asOf?"As of "+new Date(asOf).toLocaleString():"Spot reference price");
+  const state=data.data_state?.status||(data.stale?"stale":"fresh");
+  put("dataStatus",state.toUpperCase());
+  $("dataStatus").style.color=state==="fresh"?"#21c995":"#f4c75e";
+  put("connection","● MARKET DATA CONNECTED");
+  $("connection").style.color="#21c995";
+ }catch(e){
+  put("connection","PRICE FEED ERROR");
+  $("connection").style.color="#ff6577";
+  put("dataStatus","ERROR");
+  console.error(e);
+ }
+}
+
+function pivots(data,left=2,right=2){
+ const highs=[],lows=[];
+ for(let i=left;i<data.length-right;i++){
+  let hi=true,lo=true;
+  for(let j=i-left;j<=i+right;j++){
+   if(j===i)continue;
+   if(data[j].high>=data[i].high)hi=false;
+   if(data[j].low<=data[i].low)lo=false;
   }
-
-  return rows.map(x => {
-    let t = x.t ?? x.time ?? x.timestamp ?? x.date;
-    if (typeof t === "string") t = Math.floor(new Date(t).getTime()/1000);
-    else if (Number(t) > 100000000000) t = Math.floor(Number(t)/1000);
-    else t = Number(t);
-
-    return {
-      time:t,
-      open:Number(x.o ?? x.open),
-      high:Number(x.h ?? x.high),
-      low:Number(x.l ?? x.low),
-      close:Number(x.c ?? x.close)
-    };
-  }).filter(x =>
-    Number.isFinite(x.time) &&
-    Number.isFinite(x.open) &&
-    Number.isFinite(x.high) &&
-    Number.isFinite(x.low) &&
-    Number.isFinite(x.close)
-  ).sort((a,b)=>a.time-b.time)
-   .filter((x,i,a)=>i===0 || x.time!==a[i-1].time);
+  if(hi)highs.push({index:i,price:data[i].high});
+  if(lo)lows.push({index:i,price:data[i].low});
+ }
+ return {highs,lows};
 }
 
-async function loadSpot() {
-  try {
-    const response = await fetch(API+"/spot?compact=1");
-    if (!response.ok) throw new Error("HTTP "+response.status);
-    const data = await response.json();
-
-    const price = Number(data.spot_usd_oz ?? data.xau?.price);
-    if (!Number.isFinite(price)) throw new Error("Price unavailable");
-
-    lastSpot = price;
-    setText("price", "$"+fmt(price));
-
-    const asOf = data.price_as_of || data.updated_at || data.data_state?.as_of;
-    setText("priceTime", asOf
-      ? "As of "+new Date(asOf).toLocaleString()
-      : "Spot reference price");
-
-    const state = data.data_state?.status ||
-      (data.stale ? "stale" : "fresh");
-
-    setText("dataStatus",state.toUpperCase());
-    $("dataStatus").style.color =
-      state==="fresh" ? "var(--green)" :
-      state==="stale" ? "var(--gold)" : "var(--red)";
-
-    setText("dataSource","Source: "+(data.price_source || "XAUS"));
-    setText("connection","● PRICE FEED CONNECTED");
-    $("connection").style.color="var(--green)";
-  } catch(error) {
-    setText("connection","PRICE FEED ERROR");
-    $("connection").style.color="var(--red)";
-    setText("dataStatus","ERROR");
-    console.error(error);
-  }
+function getBias(data){
+ if(data.length<15)return "NEUTRAL";
+ const p=pivots(data);
+ if(p.highs.length<2||p.lows.length<2)return "NEUTRAL";
+ const h1=p.highs[p.highs.length-1].price;
+ const h0=p.highs[p.highs.length-2].price;
+ const l1=p.lows[p.lows.length-1].price;
+ const l0=p.lows[p.lows.length-2].price;
+ if(h1>h0&&l1>l0)return "BULLISH";
+ if(h1<h0&&l1<l0)return "BEARISH";
+ return "NEUTRAL";
 }
 
-async function loadChart() {
-  const tf = $("timeframe").value;
-  const setting = timeframeSettings[tf];
-
-  setText("tfLabel",tf==="60m"?"H1":tf.toUpperCase());
-  setText("message","Loading "+tf+" candles...");
-
-  try {
-    const url = `${API}/chart?symbol=xau&range=${setting.range}&interval=${setting.interval}`;
-    const response = await fetch(url);
-
-    if (!response.ok) throw new Error("Chart API HTTP "+response.status);
-
-    const json = await response.json();
-    const candles = normalizeCandles(json);
-
-    if (!candles.length) {
-      throw new Error("No valid OHLC candle data found");
-    }
-
-    currentCandles = candles;
-    candleSeries.setData(candles);
-    chart.timeScale().fitContent();
-
-    setText("candleCount",candles.length+" candles loaded");
-    setText("message","Chart updated · "+new Date().toLocaleTimeString());
-
-    analyzeSMC(candles);
-  } catch(error) {
-    setText("message","Chart error: "+error.message);
-    console.error(error);
-  }
+function getFVG(data){
+ for(let i=data.length-1;i>=2;i--){
+  const a=data[i-2],c=data[i];
+  if(c.low>a.high)return {direction:"BULLISH",low:a.high,high:c.low,index:i};
+  if(c.high<a.low)return {direction:"BEARISH",low:c.high,high:a.low,index:i};
+ }
+ return null;
 }
 
-function findPivots(data, left=2, right=2) {
-  const highs=[], lows=[];
-
-  for(let i=left;i<data.length-right;i++) {
-    let isHigh=true, isLow=true;
-
-    for(let j=i-left;j<=i+right;j++) {
-      if(j===i) continue;
-      if(data[j].high>=data[i].high) isHigh=false;
-      if(data[j].low<=data[i].low) isLow=false;
-    }
-
-    if(isHigh) highs.push({index:i,price:data[i].high});
-    if(isLow) lows.push({index:i,price:data[i].low});
-  }
-  return {highs,lows};
+function getStructure(data,p){
+ const last=data[data.length-1];
+ const high=p.highs[p.highs.length-1];
+ const low=p.lows[p.lows.length-1];
+ if(high&&last.close>high.price){
+  return {direction:"BULLISH",label:"BULLISH BOS",index:data.length-1};
+ }
+ if(low&&last.close<low.price){
+  return {direction:"BEARISH",label:"BEARISH BOS",index:data.length-1};
+ }
+ // CHoCH approximation from the latest pivot structure.
+ const bias=getBias(data);
+ if(bias==="BEARISH"&&high&&last.close>high.price)
+  return {direction:"BULLISH",label:"BULLISH CHoCH",index:data.length-1};
+ if(bias==="BULLISH"&&low&&last.close<low.price)
+  return {direction:"BEARISH",label:"BEARISH CHoCH",index:data.length-1};
+ return {direction:null,label:"NO BREAK",index:null};
 }
 
-function findFVG(data) {
-  for(let i=data.length-1;i>=2;i--) {
-    const first=data[i-2];
-    const third=data[i];
+function getOB(data,structure){
+ if(!structure.direction)return null;
+ const end=structure.index;
+ for(let i=end-1;i>=Math.max(0,end-15);i--){
+  const c=data[i];
+  if(structure.direction==="BULLISH"&&c.close<c.open)
+   return {direction:"BULLISH",low:c.low,high:c.high,index:i};
+  if(structure.direction==="BEARISH"&&c.close>c.open)
+   return {direction:"BEARISH",low:c.low,high:c.high,index:i};
+ }
+ return null;
+}
 
-    if(third.low>first.high) {
-      return {
-        direction:"BULLISH",
-        low:first.high,
-        high:third.low
-      };
-    }
-    if(third.high<first.low) {
-      return {
-        direction:"BEARISH",
-        low:third.high,
-        high:first.low
-      };
-    }
-  }
+function getSweep(data,p){
+ if(data.length<3)return null;
+ const last=data[data.length-1];
+ const prev=data[data.length-2];
+ const high=p.highs.length?p.highs[p.highs.length-1].price:null;
+ const low=p.lows.length?p.lows[p.lows.length-1].price:null;
+ if(high&&last.high>high&&last.close<high)
+  return {direction:"BEARISH",level:high};
+ if(low&&last.low<low&&last.close>low)
+  return {direction:"BULLISH",level:low};
+ if(high&&prev.high>high&&prev.close<high)
+  return {direction:"BEARISH",level:high};
+ if(low&&prev.low<low&&prev.close>low)
+  return {direction:"BULLISH",level:low};
+ return null;
+}
+
+function drawLine(price,title,color,style=2){
+ if(!Number.isFinite(price))return;
+ const line=candleSeries.createPriceLine({
+  price,
+  title,
+  color,
+  lineWidth:1,
+  lineStyle:style,
+  axisLabelVisible:true
+ });
+ overlayLines.push(line);
+}
+
+function clearLines(){
+ overlayLines.forEach(line=>candleSeries.removePriceLine(line));
+ overlayLines=[];
+}
+
+function analyze(data,mtf){
+ if(data.length<20){
+  put("notes","Not enough candles for analysis.");
+  return;
+ }
+
+ const last=data[data.length-1];
+ const p=pivots(data);
+ const high=p.highs[p.highs.length-1];
+ const low=p.lows[p.lows.length-1];
+ const structure=getStructure(data,p);
+ const fvg=getFVG(data);
+ const ob=getOB(data,structure);
+ const sweep=getSweep(data,p);
+ const bias=getBias(data);
+
+ const rangeHigh=high?.price??Math.max(...data.slice(-30).map(x=>x.high));
+ const rangeLow=low?.price??Math.min(...data.slice(-30).map(x=>x.low));
+ const equilibrium=(rangeHigh+rangeLow)/2;
+ const zone=last.close>equilibrium?"PREMIUM":
+  last.close<equilibrium?"DISCOUNT":"EQUILIBRIUM";
+
+ put("structure",structure.label);
+ put("sweep",sweep?sweep.direction+" SWEEP":"NONE");
+ put("fvg",fvg?fvg.direction:"NONE");
+ put("ob",ob?ob.direction:"NONE");
+ put("pd",zone);
+ put("swingHigh",fmt(rangeHigh));
+ put("swingLow",fmt(rangeLow));
+ put("buyLiquidity",fmt(rangeHigh));
+ put("sellLiquidity",fmt(rangeLow));
+ put("fvgDirection",fvg?.direction??"NONE");
+ put("fvgLow",fvg?fmt(fvg.low):"--");
+ put("fvgHigh",fvg?fmt(fvg.high):"--");
+ put("obDirection",ob?.direction??"NONE");
+ put("obLow",ob?fmt(ob.low):"--");
+ put("obHigh",ob?fmt(ob.high):"--");
+ put("rangeHigh",fmt(rangeHigh));
+ put("rangeLow",fmt(rangeLow));
+ put("equilibrium",fmt(equilibrium));
+ put("currentZone",zone);
+
+ // Multi-timeframe majority vote.
+ const votes=Object.values(mtf);
+ const bull=votes.filter(x=>x==="BULLISH").length;
+ const bear=votes.filter(x=>x==="BEARISH").length;
+ const overall=bull>bear?"BULLISH":bear>bull?"BEARISH":"MIXED";
+ colorBias("overallBias",overall);
+ put("biasDetail",bull+" bullish · "+bear+" bearish · "+(votes.length-bull-bear)+" neutral");
+
+ // Conservative signal confirmation.
+ const direction=structure.direction;
+ const aligned=direction==="BULLISH"&&bull>=3 ||
+               direction==="BEARISH"&&bear>=3;
+ const zoneConfirm=direction==="BULLISH"
+   ? zone==="DISCOUNT" : zone==="PREMIUM";
+ const sweepConfirm=sweep&&sweep.direction===direction;
+ const fvgConfirm=fvg&&fvg.direction===direction;
+ const obConfirm=ob&&ob.direction===direction;
+
+ let signal="WAIT";
+ let reason="Wait for stronger confirmation across structure and timeframes.";
+
+ if(aligned&&zoneConfirm&&(sweepConfirm||fvgConfirm||obConfirm)){
+  signal=direction==="BULLISH"?"BUY":"SELL";
+  reason="Structure, timeframe bias and a supporting SMC condition are aligned.";
+ }
+
+ put("signal",signal);
+ $("signal").style.color=signal==="BUY"?"#21c995":
+  signal==="SELL"?"#ff6577":"#f4c75e";
+ put("signalReason",reason);
+
+ // Illustrative risk levels, not executable trade instructions.
+ let entry=last.close,sl=null,tp1=null,tp2=null,tp3=null;
+ if(signal==="BUY"){
+  const candidates=[sweep?.level,ob?.low,fvg?.low,low?.price].filter(Number.isFinite);
+  sl=candidates.length?Math.min(...candidates)-0.5:entry-5;
+  if(sl>=entry)sl=entry-5;
+  const risk=entry-sl;
+  tp1=entry+risk;tp2=entry+2*risk;tp3=entry+3*risk;
+ }else if(signal==="SELL"){
+  const candidates=[sweep?.level,ob?.high,fvg?.high,high?.price].filter(Number.isFinite);
+  sl=candidates.length?Math.max(...candidates)+0.5:entry+5;
+  if(sl<=entry)sl=entry+5;
+  const risk=sl-entry;
+  tp1=entry-risk;tp2=entry-2*risk;tp3=entry-3*risk;
+ }
+
+ put("entry",signal==="WAIT"?"--":fmt(entry));
+ put("sl",sl===null?"--":fmt(sl));
+ put("tp1",tp1===null?"--":fmt(tp1));
+ put("tp2",tp2===null?"--":fmt(tp2));
+ put("tp3",tp3===null?"--":fmt(tp3));
+
+ clearLines();
+ if(Number.isFinite(rangeHigh))drawLine(rangeHigh,"Swing High","#ff6577",2);
+ if(Number.isFinite(rangeLow))drawLine(rangeLow,"Swing Low","#21c995",2);
+ drawLine(equilibrium,"EQ 50%","#f4c75e",2);
+ if(fvg){drawLine(fvg.low,"FVG Low","#62a9ff",1);drawLine(fvg.high,"FVG High","#62a9ff",1);}
+ if(ob){drawLine(ob.low,"OB Low","#b58aff",1);drawLine(ob.high,"OB High","#b58aff",1);}
+ if(signal!=="WAIT"){
+  drawLine(entry,"Entry","#f4c75e",0);
+  drawLine(sl,"Stop Loss","#ff6577",0);
+  drawLine(tp1,"TP1","#21c995",1);
+  drawLine(tp2,"TP2","#21c995",1);
+  drawLine(tp3,"TP3","#21c995",1);
+ }
+
+ const details=[
+  "Current close: "+fmt(last.close),
+  "Structure: "+structure.label,
+  "Liquidity sweep: "+(sweep?sweep.direction:"None"),
+  "FVG: "+(fvg?fvg.direction:"None"),
+  "Order Block: "+(ob?ob.direction:"None"),
+  "Price zone: "+zone,
+  "Multi-timeframe consensus: "+overall,
+  "Signal: "+signal,
+  "Note: This is a simplified rule-based model. It does not confirm institutional order flow."
+ ];
+ put("notes",details.join(" · "));
+}
+
+async function loadMainChart(){
+ if(refreshBusy)return;
+ refreshBusy=true;
+ const tf=$("timeframe").value;
+ put("message","Loading "+tf+" candles...");
+ try{
+  const candles=await fetchCandles(tf);
+  if(candles.length<10)throw new Error("Not enough candles returned");
+  currentCandles=candles;
+  candleSeries.setData(candles);
+  chart.timeScale().fitContent();
+  put("message",candles.length+" candles · Updated "+new Date().toLocaleTimeString());
+  return candles;
+ }catch(e){
+  put("message","Chart error: "+e.message);
+  console.error(e);
   return null;
+ }finally{
+  refreshBusy=false;
+ }
 }
 
-function findOrderBlock(data, direction, breakIndex) {
-  if(breakIndex===null || breakIndex===undefined) return null;
+async function loadMTF(){
+ const tfs=["5m","15m","30m","60m","240m"];
+ const ids={"5m":"bias5","15m":"bias15","30m":"bias30","60m":"bias60","240m":"bias240"};
+ const results={};
 
-  const start=Math.max(0,breakIndex-12);
-  for(let i=breakIndex-1;i>=start;i--) {
-    const c=data[i];
-    if(direction==="BULLISH" && c.close<c.open) {
-      return {direction:"BULLISH",low:c.low,high:c.high};
-    }
-    if(direction==="BEARISH" && c.close>c.open) {
-      return {direction:"BEARISH",low:c.low,high:c.high};
-    }
+ await Promise.all(tfs.map(async tf=>{
+  try{
+   const data=await fetchCandles(tf);
+   const bias=getBias(data);
+   results[tf]=bias;
+   colorBias(ids[tf],bias);
+  }catch(e){
+   results[tf]="NEUTRAL";
+   colorBias(ids[tf],"NEUTRAL");
+   console.warn(tf,e);
   }
-  return null;
+ }));
+ const bull=Object.values(results).filter(x=>x==="BULLISH").length;
+ const bear=Object.values(results).filter(x=>x==="BEARISH").length;
+ put("mtfSummary",bull+" bullish timeframes · "+bear+" bearish timeframes · Remaining neutral or unavailable");
+ return results;
 }
 
-function analyzeSMC(data) {
-  if(data.length<15) {
-    setText("notes","Not enough candles for reliable structure analysis.");
-    return;
-  }
-
-  const pivots=findPivots(data);
-  const last=data[data.length-1];
-  const previous=data[data.length-2];
-
-  const latestHigh=pivots.highs[pivots.highs.length-1];
-  const latestLow=pivots.lows[pivots.lows.length-1];
-
-  const priorHigh=pivots.highs.length>1
-    ? pivots.highs[pivots.highs.length-2] : null;
-  const priorLow=pivots.lows.length>1
-    ? pivots.lows[pivots.lows.length-2] : null;
-
-  let bias="NEUTRAL";
-  if(latestHigh && priorHigh && latestLow && priorLow) {
-    if(latestHigh.price>priorHigh.price &&
-       latestLow.price>priorLow.price) bias="BULLISH";
-    else if(latestHigh.price<priorHigh.price &&
-            latestLow.price<priorLow.price) bias="BEARISH";
-  }
-
-  let structure="NO BREAK";
-  let breakDirection=null;
-  let breakIndex=null;
-
-  if(latestHigh && last.close>latestHigh.price) {
-    structure=bias==="BEARISH"?"BULLISH CHoCH":"BULLISH BOS";
-    breakDirection="BULLISH";
-    breakIndex=data.length-1;
-  } else if(latestLow && last.close<latestLow.price) {
-    structure=bias==="BULLISH"?"BEARISH CHoCH":"BEARISH BOS";
-    breakDirection="BEARISH";
-    breakIndex=data.length-1;
-  }
-
-  const fvg=findFVG(data);
-  const ob=breakDirection
-    ? findOrderBlock(data,breakDirection,breakIndex)
-    : null;
-
-  setText("bias",bias);
-  $("bias").style.color =
-    bias==="BULLISH"?"var(--green)":
-    bias==="BEARISH"?"var(--red)":"var(--gold)";
-
-  setText("structureTag","Structure: "+structure);
-  setText("fvgTag","FVG: "+(fvg?fvg.direction:"NONE"));
-  setText("obTag","Order Block: "+(ob?ob.direction:"NONE"));
-
-  setText("swingHigh",latestHigh?fmt(latestHigh.price):"--");
-  setText("swingLow",latestLow?fmt(latestLow.price):"--");
-  setText("resistance",latestHigh?fmt(latestHigh.price):"--");
-  setText("support",latestLow?fmt(latestLow.price):"--");
-
-  setText("fvgDirection",fvg?fvg.direction:"NONE");
-  setText("fvgLow",fvg?fmt(fvg.low):"--");
-  setText("fvgHigh",fvg?fmt(fvg.high):"--");
-
-  setText("obDirection",ob?ob.direction:"NONE");
-  setText("obLow",ob?fmt(ob.low):"--");
-  setText("obHigh",ob?fmt(ob.high):"--");
-
-  // Conservative rule-based setup: WAIT unless structure,
-  // bias and a nearby zone point in the same direction.
-  let signal="WAIT";
-  let reason="No clear aligned setup. Wait for confirmation.";
-
-  const nearFVG=fvg &&
-    last.close>=fvg.low && last.close<=fvg.high;
-
-  const nearOB=ob &&
-    last.close>=ob.low && last.close<=ob.high;
-
-  if(bias==="BULLISH" &&
-     breakDirection==="BULLISH" &&
-     (nearFVG || nearOB)) {
-    signal="BUY";
-    reason="Bullish structure break with price inside a detected zone.";
-  } else if(bias==="BEARISH" &&
-            breakDirection==="BEARISH" &&
-            (nearFVG || nearOB)) {
-    signal="SELL";
-    reason="Bearish structure break with price inside a detected zone.";
-  }
-
-  setText("signal",signal);
-  $("signal").style.color =
-    signal==="BUY"?"var(--green)":
-    signal==="SELL"?"var(--red)":"var(--gold)";
-
-  setText("signalReason",reason);
-
-  let notes=[
-    "Current close: "+fmt(last.close),
-    "Previous close: "+fmt(previous.close),
-    "Market bias: "+bias,
-    "Structure: "+structure,
-    "FVG detected: "+(fvg?fvg.direction:"No"),
-    "Order block detected: "+(ob?ob.direction:"No")
-  ];
-
-  if(lastSpot!==null) {
-    notes.push("XAUS spot reference: "+fmt(lastSpot));
-  }
-
-  notes.push("This is a simplified candle-based heuristic, not a complete institutional SMC model.");
-  setText("notes",notes.join(" · "));
-
-  // Add a marker on the latest candle for a detected structure break.
-  const markers=[];
-  if(breakDirection) {
-    markers.push({
-      time:last.time,
-      position:breakDirection==="BULLISH"?"belowBar":"aboveBar",
-      color:breakDirection==="BULLISH"?"#21c995":"#ff6577",
-      shape:breakDirection==="BULLISH"?"arrowUp":"arrowDown",
-      text:structure
-    });
-  }
-  candleSeries.setMarkers(markers);
+async function refreshAll(){
+ await loadSpot();
+ const [candles,mtf]=await Promise.all([loadMainChart(),loadMTF()]);
+ if(candles)analyze(candles,mtf);
 }
 
-$("timeframe").addEventListener("change",loadChart);
-$("refreshBtn").addEventListener("click",async()=>{
-  await loadSpot();
-  await loadChart();
-});
+$("timeframe").addEventListener("change",refreshAll);
+$("refreshBtn").addEventListener("click",refreshAll);
 
 initChart();
-loadSpot();
-loadChart();
+refreshAll();
 
-// Spot is cached by the provider for 60 seconds.
-// Do not poll it more frequently than that.
+// Spot API cache is 60 seconds. Do not poll more frequently.
 setInterval(loadSpot,60000);
-
-// Refresh chart less frequently to avoid unnecessary API requests.
-setInterval(loadChart,180000);
+// Refresh the selected chart and MTF analysis every 5 minutes.
+setInterval(refreshAll,300000);
 </script>
 </body>
 </html>
