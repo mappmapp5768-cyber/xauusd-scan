@@ -55,6 +55,37 @@ button:hover{border-color:var(--gold)}
 </header>
 
 <main>
+ 
+<div class="panel" style="margin-top:15px">
+  <div class="label">AI SCREENSHOT ANALYSIS</div>
+  <p class="small">Upload your MT5 or TradingView XAUUSD chart screenshot.</p>
+
+  <input
+    type="file"
+    id="aiImage"
+    accept="image/png,image/jpeg,image/webp"
+  />
+
+  <div style="margin-top:12px">
+    <img
+      id="aiPreview"
+      alt="Chart screenshot preview"
+      style="display:none;max-width:100%;max-height:300px;border-radius:8px"
+    />
+  </div>
+
+  <div style="margin-top:12px">
+    <button id="aiAnalyzeBtn">Analyze Screenshot with AI</button>
+    <span id="aiStatus" class="small">Waiting for screenshot...</span>
+  </div>
+
+  <div id="aiResult" class="small" style="margin-top:15px">
+    AI analysis will appear here.
+  </div>
+
+  <div id="aiCompare" class="small" style="margin-top:12px"></div>
+</div>
+
  <div class="grid">
   <div class="panel">
    <div class="label">XAUUSD SPOT PRICE</div>
