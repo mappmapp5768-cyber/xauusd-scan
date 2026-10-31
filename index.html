@@ -2,35 +2,548 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>XAUUSD SMC Scanner</title>
-  <style>
-    body {
-      background: #101827;
-      color: white;
-      font-family: Arial, sans-serif;
-      text-align: center;
-      padding: 60px 20px;
-    }
-    .card {
-      max-width: 600px;
-      margin: auto;
-      padding: 35px;
-      background: #1e293b;
-      border-radius: 16px;
-    }
-    h1 { color: #fbbf24; }
-    .status { color: #4ade80; }
-  </style>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>XAUUSD SMC Scanner</title>
+<script src="https://unpkg.com/lightweight-charts@4.2.2/dist/lightweight-charts.standalone.production.js"></script>
+<style>
+:root {
+  --bg:#080d16; --panel:#111a29; --border:#243247;
+  --text:#e8eef8; --muted:#8b9bb2; --gold:#f4c75e;
+  --green:#21c995; --red:#ff6577; --blue:#62a9ff;
+}
+* {box-sizing:border-box}
+body {
+  margin:0; background:var(--bg); color:var(--text);
+  font-family:Arial, sans-serif;
+}
+header {
+  padding:20px 5%; border-bottom:1px solid var(--border);
+  display:flex; justify-content:space-between; align-items:center;
+  flex-wrap:wrap; gap:12px;
+}
+.logo {font-size:22px;font-weight:bold;color:var(--gold)}
+.status {font-size:12px;color:var(--muted)}
+main {max-width:1400px;margin:auto;padding:22px 4%}
+.grid {
+  display:grid;grid-template-columns:repeat(4,1fr);
+  gap:14px;margin-bottom:16px;
+}
+.panel {
+  background:var(--panel);border:1px solid var(--border);
+  border-radius:12px;padding:17px;
+}
+.label {font-size:12px;color:var(--muted);margin-bottom:10px}
+.value {font-size:25px;font-weight:bold}
+.gold {color:var(--gold)}
+.green {color:var(--green)}
+.red {color:var(--red)}
+.muted {color:var(--muted)}
+.small {font-size:12px;color:var(--muted);margin-top:8px}
+.toolbar {
+  display:flex;align-items:center;justify-content:space-between;
+  flex-wrap:wrap;gap:12px;margin-bottom:14px;
+}
+button,select {
+  background:#1a2940;color:var(--text);
+  border:1px solid var(--border);border-radius:7px;
+  padding:9px 13px;cursor:pointer;
+}
+button.active {background:#8a6925;color:white;border-color:var(--gold)}
+#chart {height:440px;width:100%}
+.chart-panel {padding:12px}
+.analysis {
+  display:grid;grid-template-columns:repeat(2,1fr);
+  gap:14px;margin-top:16px;
+}
+.signal {
+  font-size:28px;font-weight:bold;margin:8px 0;
+}
+.tag {
+  display:inline-block;padding:5px 9px;border-radius:5px;
+  background:#1c2b42;font-size:12px;margin:4px 4px 4px 0;
+}
+.item {
+  display:flex;justify-content:space-between;gap:12px;
+  padding:10px 0;border-bottom:1px solid var(--border);
+  font-size:13px;
+}
+.item:last-child {border:0}
+.footer {
+  text-align:center;color:var(--muted);
+  font-size:11px;padding:25px 10px;line-height:1.7;
+}
+#message {font-size:12px;color:var(--muted);margin-top:8px}
+@media(max-width:800px) {
+  .grid {grid-template-columns:repeat(2,1fr)}
+  .analysis {grid-template-columns:1fr}
+  #chart {height:350px}
+}
+@media(max-width:420px) {
+  .value {font-size:20px}
+  main {padding:15px 3%}
+}
+</style>
 </head>
 <body>
-  <div class="card">
-    <h1>XAUUSD SMC SCANNER</h1>
-    <p>Smart Money Concepts Analysis</p>
-    <h2 class="status">WEBSITE ONLINE</h2>
-    <p>Your website is working successfully!</p>
-    <p>Welcome to XAUUSD SMC Scanner.</p>
+
+<header>
+  <div class="logo">◆ XAUUSD SMC SCANNER</div>
+  <div class="status" id="connection">CONNECTING TO MARKET DATA...</div>
+</header>
+
+<main>
+  <div class="grid">
+    <div class="panel">
+      <div class="label">XAUUSD SPOT PRICE</div>
+      <div class="value gold" id="price">Loading...</div>
+      <div class="small" id="priceTime">Waiting for data</div>
+    </div>
+    <div class="panel">
+      <div class="label">MARKET BIAS</div>
+      <div class="value" id="bias">--</div>
+      <div class="small">Based on recent swing structure</div>
+    </div>
+    <div class="panel">
+      <div class="label">TIMEFRAME</div>
+      <div class="value gold" id="tfLabel">M5</div>
+      <div class="small" id="candleCount">No candles loaded</div>
+    </div>
+    <div class="panel">
+      <div class="label">DATA STATUS</div>
+      <div class="value" id="dataStatus">--</div>
+      <div class="small" id="dataSource">XAUS API</div>
+    </div>
   </div>
+
+  <div class="panel chart-panel">
+    <div class="toolbar">
+      <strong> XAUUSD · Candlestick Chart</strong>
+      <div>
+        <select id="timeframe">
+          <option value="5m">M5</option>
+          <option value="15m">M15</option>
+          <option value="30m">M30</option>
+          <option value="60m">H1</option>
+        </select>
+        <button id="refreshBtn">Refresh</button>
+      </div>
+    </div>
+    <div id="chart"></div>
+    <div id="message">Loading chart data...</div>
+  </div>
+
+  <div class="analysis">
+    <div class="panel">
+      <div class="label">SMC TRADE SETUP</div>
+      <div class="signal muted" id="signal">WAIT</div>
+      <div id="signalReason" class="small">Analyzing market structure...</div>
+      <div style="margin-top:14px">
+        <span class="tag" id="structureTag">Structure: --</span>
+        <span class="tag" id="fvgTag">FVG: --</span>
+        <span class="tag" id="obTag">Order Block: --</span>
+      </div>
+    </div>
+
+    <div class="panel">
+      <div class="label">KEY MARKET LEVELS</div>
+      <div class="item"><span>Recent Swing High</span><b id="swingHigh">--</b></div>
+      <div class="item"><span>Recent Swing Low</span><b id="swingLow">--</b></div>
+      <div class="item"><span>Resistance / Liquidity</span><b id="resistance">--</b></div>
+      <div class="item"><span>Support / Liquidity</span><b id="support">--</b></div>
+    </div>
+
+    <div class="panel">
+      <div class="label">FAIR VALUE GAP (FVG)</div>
+      <div class="item"><span>Latest FVG</span><b id="fvgDirection">--</b></div>
+      <div class="item"><span>FVG Lower</span><b id="fvgLow">--</b></div>
+      <div class="item"><span>FVG Upper</span><b id="fvgHigh">--</b></div>
+      <div class="small">Three-candle imbalance detection</div>
+    </div>
+
+    <div class="panel">
+      <div class="label">ORDER BLOCK</div>
+      <div class="item"><span>Latest OB</span><b id="obDirection">--</b></div>
+      <div class="item"><span>OB Low</span><b id="obLow">--</b></div>
+      <div class="item"><span>OB High</span><b id="obHigh">--</b></div>
+      <div class="small">Heuristic detection from recent structure breaks</div>
+    </div>
+  </div>
+
+  <div class="panel" style="margin-top:16px">
+    <div class="label">MARKET ANALYSIS NOTES</div>
+    <div id="notes" class="small">Waiting for candles...</div>
+  </div>
+</main>
+
+<div class="footer">
+  XAUUSD SMC SCANNER · Educational analysis tool<br>
+  Data provider: XAUS · Prices are indicative spot reference prices, not broker quotes.<br>
+  Signals are algorithmic estimates, not financial advice or guaranteed trading results.
+</div>
+
+<script>
+const API = "https://xaus.com/api/v1";
+const $ = id => document.getElementById(id);
+
+let chart, candleSeries;
+let currentCandles = [];
+let lastSpot = null;
+
+const timeframeSettings = {
+  "5m":  {range:"1d", interval:"5m"},
+  "15m": {range:"5d", interval:"15m"},
+  "30m": {range:"1mo", interval:"30m"},
+  "60m": {range:"3mo", interval:"60m"}
+};
+
+function fmt(value) {
+  return Number.isFinite(value)
+    ? value.toLocaleString("en-US",{minimumFractionDigits:2,maximumFractionDigits:2})
+    : "--";
+}
+
+function setText(id, value) {
+  $(id).textContent = value;
+}
+
+function initChart() {
+  const el = $("chart");
+  chart = LightweightCharts.createChart(el, {
+    width: el.clientWidth,
+    height: 440,
+    layout: {
+      background:{color:"#111a29"},
+      textColor:"#aab8cc"
+    },
+    grid: {
+      vertLines:{color:"#1d2a3d"},
+      horzLines:{color:"#1d2a3d"}
+    },
+    rightPriceScale:{borderColor:"#34445b"},
+    timeScale:{
+      borderColor:"#34445b",
+      timeVisible:true,
+      secondsVisible:false
+    },
+    crosshair:{mode:1}
+  });
+
+  candleSeries = chart.addCandlestickSeries({
+    upColor:"#21c995",
+    downColor:"#ff6577",
+    borderUpColor:"#21c995",
+    borderDownColor:"#ff6577",
+    wickUpColor:"#21c995",
+    wickDownColor:"#ff6577"
+  });
+
+  new ResizeObserver(() => {
+    chart.applyOptions({width:el.clientWidth});
+  }).observe(el);
+}
+
+function normalizeCandles(json) {
+  let rows = [];
+  if (Array.isArray(json)) rows = json;
+  else {
+    rows = json.points || json.data || json.candles ||
+           json.results || json.chart || [];
+  }
+
+  return rows.map(x => {
+    let t = x.t ?? x.time ?? x.timestamp ?? x.date;
+    if (typeof t === "string") t = Math.floor(new Date(t).getTime()/1000);
+    else if (Number(t) > 100000000000) t = Math.floor(Number(t)/1000);
+    else t = Number(t);
+
+    return {
+      time:t,
+      open:Number(x.o ?? x.open),
+      high:Number(x.h ?? x.high),
+      low:Number(x.l ?? x.low),
+      close:Number(x.c ?? x.close)
+    };
+  }).filter(x =>
+    Number.isFinite(x.time) &&
+    Number.isFinite(x.open) &&
+    Number.isFinite(x.high) &&
+    Number.isFinite(x.low) &&
+    Number.isFinite(x.close)
+  ).sort((a,b)=>a.time-b.time)
+   .filter((x,i,a)=>i===0 || x.time!==a[i-1].time);
+}
+
+async function loadSpot() {
+  try {
+    const response = await fetch(API+"/spot?compact=1");
+    if (!response.ok) throw new Error("HTTP "+response.status);
+    const data = await response.json();
+
+    const price = Number(data.spot_usd_oz ?? data.xau?.price);
+    if (!Number.isFinite(price)) throw new Error("Price unavailable");
+
+    lastSpot = price;
+    setText("price", "$"+fmt(price));
+
+    const asOf = data.price_as_of || data.updated_at || data.data_state?.as_of;
+    setText("priceTime", asOf
+      ? "As of "+new Date(asOf).toLocaleString()
+      : "Spot reference price");
+
+    const state = data.data_state?.status ||
+      (data.stale ? "stale" : "fresh");
+
+    setText("dataStatus",state.toUpperCase());
+    $("dataStatus").style.color =
+      state==="fresh" ? "var(--green)" :
+      state==="stale" ? "var(--gold)" : "var(--red)";
+
+    setText("dataSource","Source: "+(data.price_source || "XAUS"));
+    setText("connection","● PRICE FEED CONNECTED");
+    $("connection").style.color="var(--green)";
+  } catch(error) {
+    setText("connection","PRICE FEED ERROR");
+    $("connection").style.color="var(--red)";
+    setText("dataStatus","ERROR");
+    console.error(error);
+  }
+}
+
+async function loadChart() {
+  const tf = $("timeframe").value;
+  const setting = timeframeSettings[tf];
+
+  setText("tfLabel",tf==="60m"?"H1":tf.toUpperCase());
+  setText("message","Loading "+tf+" candles...");
+
+  try {
+    const url = `${API}/chart?symbol=xau&range=${setting.range}&interval=${setting.interval}`;
+    const response = await fetch(url);
+
+    if (!response.ok) throw new Error("Chart API HTTP "+response.status);
+
+    const json = await response.json();
+    const candles = normalizeCandles(json);
+
+    if (!candles.length) {
+      throw new Error("No valid OHLC candle data found");
+    }
+
+    currentCandles = candles;
+    candleSeries.setData(candles);
+    chart.timeScale().fitContent();
+
+    setText("candleCount",candles.length+" candles loaded");
+    setText("message","Chart updated · "+new Date().toLocaleTimeString());
+
+    analyzeSMC(candles);
+  } catch(error) {
+    setText("message","Chart error: "+error.message);
+    console.error(error);
+  }
+}
+
+function findPivots(data, left=2, right=2) {
+  const highs=[], lows=[];
+
+  for(let i=left;i<data.length-right;i++) {
+    let isHigh=true, isLow=true;
+
+    for(let j=i-left;j<=i+right;j++) {
+      if(j===i) continue;
+      if(data[j].high>=data[i].high) isHigh=false;
+      if(data[j].low<=data[i].low) isLow=false;
+    }
+
+    if(isHigh) highs.push({index:i,price:data[i].high});
+    if(isLow) lows.push({index:i,price:data[i].low});
+  }
+  return {highs,lows};
+}
+
+function findFVG(data) {
+  for(let i=data.length-1;i>=2;i--) {
+    const first=data[i-2];
+    const third=data[i];
+
+    if(third.low>first.high) {
+      return {
+        direction:"BULLISH",
+        low:first.high,
+        high:third.low
+      };
+    }
+    if(third.high<first.low) {
+      return {
+        direction:"BEARISH",
+        low:third.high,
+        high:first.low
+      };
+    }
+  }
+  return null;
+}
+
+function findOrderBlock(data, direction, breakIndex) {
+  if(breakIndex===null || breakIndex===undefined) return null;
+
+  const start=Math.max(0,breakIndex-12);
+  for(let i=breakIndex-1;i>=start;i--) {
+    const c=data[i];
+    if(direction==="BULLISH" && c.close<c.open) {
+      return {direction:"BULLISH",low:c.low,high:c.high};
+    }
+    if(direction==="BEARISH" && c.close>c.open) {
+      return {direction:"BEARISH",low:c.low,high:c.high};
+    }
+  }
+  return null;
+}
+
+function analyzeSMC(data) {
+  if(data.length<15) {
+    setText("notes","Not enough candles for reliable structure analysis.");
+    return;
+  }
+
+  const pivots=findPivots(data);
+  const last=data[data.length-1];
+  const previous=data[data.length-2];
+
+  const latestHigh=pivots.highs[pivots.highs.length-1];
+  const latestLow=pivots.lows[pivots.lows.length-1];
+
+  const priorHigh=pivots.highs.length>1
+    ? pivots.highs[pivots.highs.length-2] : null;
+  const priorLow=pivots.lows.length>1
+    ? pivots.lows[pivots.lows.length-2] : null;
+
+  let bias="NEUTRAL";
+  if(latestHigh && priorHigh && latestLow && priorLow) {
+    if(latestHigh.price>priorHigh.price &&
+       latestLow.price>priorLow.price) bias="BULLISH";
+    else if(latestHigh.price<priorHigh.price &&
+            latestLow.price<priorLow.price) bias="BEARISH";
+  }
+
+  let structure="NO BREAK";
+  let breakDirection=null;
+  let breakIndex=null;
+
+  if(latestHigh && last.close>latestHigh.price) {
+    structure=bias==="BEARISH"?"BULLISH CHoCH":"BULLISH BOS";
+    breakDirection="BULLISH";
+    breakIndex=data.length-1;
+  } else if(latestLow && last.close<latestLow.price) {
+    structure=bias==="BULLISH"?"BEARISH CHoCH":"BEARISH BOS";
+    breakDirection="BEARISH";
+    breakIndex=data.length-1;
+  }
+
+  const fvg=findFVG(data);
+  const ob=breakDirection
+    ? findOrderBlock(data,breakDirection,breakIndex)
+    : null;
+
+  setText("bias",bias);
+  $("bias").style.color =
+    bias==="BULLISH"?"var(--green)":
+    bias==="BEARISH"?"var(--red)":"var(--gold)";
+
+  setText("structureTag","Structure: "+structure);
+  setText("fvgTag","FVG: "+(fvg?fvg.direction:"NONE"));
+  setText("obTag","Order Block: "+(ob?ob.direction:"NONE"));
+
+  setText("swingHigh",latestHigh?fmt(latestHigh.price):"--");
+  setText("swingLow",latestLow?fmt(latestLow.price):"--");
+  setText("resistance",latestHigh?fmt(latestHigh.price):"--");
+  setText("support",latestLow?fmt(latestLow.price):"--");
+
+  setText("fvgDirection",fvg?fvg.direction:"NONE");
+  setText("fvgLow",fvg?fmt(fvg.low):"--");
+  setText("fvgHigh",fvg?fmt(fvg.high):"--");
+
+  setText("obDirection",ob?ob.direction:"NONE");
+  setText("obLow",ob?fmt(ob.low):"--");
+  setText("obHigh",ob?fmt(ob.high):"--");
+
+  // Conservative rule-based setup: WAIT unless structure,
+  // bias and a nearby zone point in the same direction.
+  let signal="WAIT";
+  let reason="No clear aligned setup. Wait for confirmation.";
+
+  const nearFVG=fvg &&
+    last.close>=fvg.low && last.close<=fvg.high;
+
+  const nearOB=ob &&
+    last.close>=ob.low && last.close<=ob.high;
+
+  if(bias==="BULLISH" &&
+     breakDirection==="BULLISH" &&
+     (nearFVG || nearOB)) {
+    signal="BUY";
+    reason="Bullish structure break with price inside a detected zone.";
+  } else if(bias==="BEARISH" &&
+            breakDirection==="BEARISH" &&
+            (nearFVG || nearOB)) {
+    signal="SELL";
+    reason="Bearish structure break with price inside a detected zone.";
+  }
+
+  setText("signal",signal);
+  $("signal").style.color =
+    signal==="BUY"?"var(--green)":
+    signal==="SELL"?"var(--red)":"var(--gold)";
+
+  setText("signalReason",reason);
+
+  let notes=[
+    "Current close: "+fmt(last.close),
+    "Previous close: "+fmt(previous.close),
+    "Market bias: "+bias,
+    "Structure: "+structure,
+    "FVG detected: "+(fvg?fvg.direction:"No"),
+    "Order block detected: "+(ob?ob.direction:"No")
+  ];
+
+  if(lastSpot!==null) {
+    notes.push("XAUS spot reference: "+fmt(lastSpot));
+  }
+
+  notes.push("This is a simplified candle-based heuristic, not a complete institutional SMC model.");
+  setText("notes",notes.join(" · "));
+
+  // Add a marker on the latest candle for a detected structure break.
+  const markers=[];
+  if(breakDirection) {
+    markers.push({
+      time:last.time,
+      position:breakDirection==="BULLISH"?"belowBar":"aboveBar",
+      color:breakDirection==="BULLISH"?"#21c995":"#ff6577",
+      shape:breakDirection==="BULLISH"?"arrowUp":"arrowDown",
+      text:structure
+    });
+  }
+  candleSeries.setMarkers(markers);
+}
+
+$("timeframe").addEventListener("change",loadChart);
+$("refreshBtn").addEventListener("click",async()=>{
+  await loadSpot();
+  await loadChart();
+});
+
+initChart();
+loadSpot();
+loadChart();
+
+// Spot is cached by the provider for 60 seconds.
+// Do not poll it more frequently than that.
+setInterval(loadSpot,60000);
+
+// Refresh chart less frequently to avoid unnecessary API requests.
+setInterval(loadChart,180000);
+</script>
 </body>
 </html>
