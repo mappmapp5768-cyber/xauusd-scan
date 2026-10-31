@@ -1,0 +1,194 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>XAUUSD SMC Scanner</title>
+<style>
+*{box-sizing:border-box}
+body{margin:0;background:#0c111a;color:#edf2f8;font-family:Arial,sans-serif}
+header{padding:22px;background:#151d29;border-bottom:1px solid #293547}
+h1{margin:0;color:#e9bd55;font-size:23px}
+main{max-width:1050px;margin:auto;padding:20px}
+.panel{background:#151e2a;border:1px solid #2a3748;border-radius:12px;padding:18px;margin-bottom:16px}
+.grid{display:grid;grid-template-columns:repeat(2,1fr);gap:12px}
+.metric{background:#202b39;padding:14px;border-radius:9px}
+.metric small{color:#9aacc0;display:block;margin-bottom:8px}
+.metric b{font-size:19px}
+select,button,input{padding:11px;border-radius:7px;border:1px solid #39485a;background:#202b39;color:white}
+button{cursor:pointer;background:#d9ac43;color:#15120b;font-weight:bold}
+.signal{font-size:28px;font-weight:bold;color:#e8bd53}
+.buy{color:#31d69a}.sell{color:#ff6874}
+.muted{color:#9aacc0;font-size:13px}
+#result{white-space:pre-wrap;line-height:1.8}
+@media(max-width:600px){.grid{grid-template-columns:1fr}}
+</style>
+</head>
+<body>
+<header>
+<h1>🟡 XAUUSD SMC SCANNER</h1>
+<div class="muted">Smart Money Concept Analysis</div>
+</header>
+<main>
+<section class="panel">
+<h3>Market Scanner</h3>
+<p class="muted">Upload your XAUUSD OHLC CSV file</p>
+<input type="file" id="csv" accept=".csv">
+<br><br>
+<select id="tf">
+<option>M5</option><option selected>M15</option>
+<option>M30</option><option>H1</option><option>H4</option>
+</select>
+<button onclick="scan()">SCAN MARKET</button>
+<button onclick="demo()">DEMO DATA</button>
+</section>
+
+<section class="panel">
+<h3>Trading Analysis</h3>
+<div class="grid">
+<div class="metric"><small>MARKET BIAS</small><div id="bias" class="signal">WAIT</div></div>
+<div class="metric"><small>TIMEFRAME</small><b id="timeframe">M15</b></div>
+<div class="metric"><small>ENTRY ZONE</small><b id="entry">---</b></div>
+<div class="metric"><small>STOP LOSS</small><b id="sl">---</b></div>
+<div class="metric"><small>TAKE PROFIT</small><b id="tp">---</b></div>
+<div class="metric"><small>LAST PRICE</small><b id="price">---</b></div>
+</div>
+</section>
+
+<section class="panel">
+<h3>SMC Analysis</h3>
+<div id="result" class="muted">Upload CSV data to start analysis.</div>
+</section>
+
+<section class="panel">
+<h3>Risk Management</h3>
+<p class="muted">Signals are analytical estimates, not guaranteed trades. Always verify market conditions before entering.</p>
+</section>
+</main>
+<script>
+let candles=[];
+
+function parseCSV(text){
+ const lines=text.trim().split(/\r?\n/);
+ const headers=lines[0].toLowerCase().split(",").map(x=>x.trim());
+ const index=k=>headers.indexOf(k);
+ ["open","high","low","close"].forEach(k=>{
+  if(index(k)<0)throw Error("Missing CSV column: "+k);
+ });
+ const rows=lines.slice(1).map(line=>{
+  const a=line.split(",");
+  return {
+   open:+a[index("open")],
+   high:+a[index("high")],
+   low:+a[index("low")],
+   close:+a[index("close")]
+  };
+ }).filter(c=>[c.open,c.high,c.low,c.close].every(Number.isFinite));
+ if(rows.length<30)throw Error("Please upload at least 30 candles.");
+ return rows;
+}
+
+document.getElementById("csv").addEventListener("change",async e=>{
+ try{
+  candles=parseCSV(await e.target.files[0].text());
+  document.getElementById("result").textContent=
+   "Loaded "+candles.length+" candles successfully.";
+ }catch(err){alert(err.message);}
+});
+
+function analyze(){
+ if(candles.length<30)throw Error("Upload CSV first.");
+ const n=candles.length,last=candles[n-1];
+ let highs=[],lows=[];
+ for(let i=2;i<n-2;i++){
+  if(candles[i].high>candles[i-1].high&&
+     candles[i].high>candles[i-2].high&&
+     candles[i].high>candles[i+1].high&&
+     candles[i].high>candles[i+2].high)highs.push(candles[i].high);
+  if(candles[i].low<candles[i-1].low&&
+     candles[i].low<candles[i-2].low&&
+     candles[i].low<candles[i+1].low&&
+     candles[i].low<candles[i+2].low)lows.push(candles[i].low);
+ }
+ const swingHigh=highs.at(-1);
+ const swingLow=lows.at(-1);
+ let bias="WAIT",event="No structure break";
+ if(swingHigh&&last.close>swingHigh){
+  bias="BUY";event="Bullish BOS";
+ }
+ if(swingLow&&last.close<swingLow){
+  bias="SELL";event="Bearish BOS";
+ }
+
+ let fvg=null;
+ for(let i=n-1;i>=2;i--){
+  if(candles[i].low>candles[i-2].high){
+   fvg={type:"Bullish FVG",low:candles[i-2].high,high:candles[i].low};break;
+  }
+  if(candles[i].high<candles[i-2].low){
+   fvg={type:"Bearish FVG",low:candles[i].high,high:candles[i-2].low};break;
+  }
+ }
+
+ let ob=null;
+ if(bias!=="WAIT"){
+  for(let i=n-2;i>=Math.max(0,n-12);i--){
+   const c=candles[i];
+   if((bias==="BUY"&&c.close<c.open)||
+      (bias==="SELL"&&c.close>c.open)){
+    ob={low:c.low,high:c.high};break;
+   }
+  }
+ }
+
+ const zone=ob||fvg;
+ let entry="---",sl="---",tp="---";
+ if(bias!=="WAIT"&&zone){
+  const mid=(zone.low+zone.high)/2;
+  const stop=bias==="BUY"?zone.low:zone.high;
+  const risk=Math.abs(mid-stop);
+  entry=zone.low.toFixed(2)+" - "+zone.high.toFixed(2);
+  sl=stop.toFixed(2);
+  tp=(bias==="BUY"?mid+2*risk:mid-2*risk).toFixed(2);
+ }
+
+ return {bias,event,last,swingHigh,swingLow,fvg,ob,entry,sl,tp};
+}
+
+function scan(){
+ try{
+  const r=analyze();
+  const el=document.getElementById("bias");
+  el.textContent=r.bias;
+  el.className="signal "+(r.bias==="BUY"?"buy":r.bias==="SELL"?"sell":"");
+  document.getElementById("timeframe").textContent=document.getElementById("tf").value;
+  document.getElementById("entry").textContent=r.entry;
+  document.getElementById("sl").textContent=r.sl;
+  document.getElementById("tp").textContent=r.tp;
+  document.getElementById("price").textContent=r.last.close.toFixed(2);
+  document.getElementById("result").textContent=
+   "STRUCTURE: "+r.event+
+   "\nSWING HIGH: "+(r.swingHigh?.toFixed(2)||"Not found")+
+   "\nSWING LOW: "+(r.swingLow?.toFixed(2)||"Not found")+
+   "\nFVG: "+(r.fvg?r.fvg.type+" "+r.fvg.low.toFixed(2)+" - "+r.fvg.high.toFixed(2):"Not found")+
+   "\nORDER BLOCK: "+(r.ob?r.ob.low.toFixed(2)+" - "+r.ob.high.toFixed(2):"Not found")+
+   "\n\nAnalysis uses uploaded CSV data only.";
+ }catch(e){alert(e.message);}
+}
+
+function demo(){
+ let p=2350;
+ candles=[];
+ for(let i=0;i<80;i++){
+  const o=p;
+  p+=Math.sin(i*1.6)*1.2+(i>50?.3:-.1);
+  candles.push({open:o,close:p,high:Math.max(o,p)+.8,low:Math.min(o,p)-.7});
+ }
+ document.getElementById("result").textContent=
+  "DEMO DATA ONLY - NOT LIVE MARKET DATA";
+ scan();
+}
+</script>
+</body>
+</html>
