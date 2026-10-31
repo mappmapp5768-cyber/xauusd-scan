@@ -307,7 +307,7 @@ async function fetchCandles(tf){
  return data;
 }
 
-async function loadSpot(){
+async function loadSpot()console.log("XAUS API DATA:", data);{
  try{
   const res=await fetch(API+"/spot?compact=1");
   if(!res.ok)throw new Error("HTTP "+res.status);
