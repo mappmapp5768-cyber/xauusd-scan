@@ -334,18 +334,6 @@ function setConnection(message, good=true) {
 function normalizeCandles(json) {
   let list = [];
 
-  if (Array.isArray(json)) list = json;
-  else if (Array.isArray(json.candles)) list = json.candles;
-  else if (Array.isArray(json.data)) list = json.data;
-  else if (Array.isArray(json.results)) list = json.results;
-  else if (json.data && Array.isArray(json.data.candles)) {
-    list = json.data.candles;
-  }
-
-  
-function normalizeCandles(json) {
-  let list = [];
-
   if (Array.isArray(json)) {
     list = json;
   } else if (Array.isArray(json.points)) {
