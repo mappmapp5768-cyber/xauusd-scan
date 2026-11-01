@@ -567,12 +567,18 @@ function analyzeMarket() {
 
   setText("avgRange",fmt(avgRange));
 
-  // Liquidity sweep
+  // Liquidity sweep: compare the current candle with candles before it.
+  // A high sweep is bearish; a low sweep is bullish.
+  const priorHigh = Math.max(...highs.slice(-21,-1));
+  const priorLow = Math.min(...lows.slice(-21,-1));
+  const shortHigh = Math.max(...highs.slice(-10,-1));
+  const shortLow = Math.min(...lows.slice(-10,-1));
+
   let sweep = "NONE";
-  if (last.h > recentHigh && last.c < recentHigh) sweep = "BUY-SIDE SWEPT";
-  else if (last.l < recentLow && last.c > recentLow) sweep = "SELL-SIDE SWEPT";
-  else if (last.h > Math.max(...highs.slice(-10,-1)) && last.c < prev.c) sweep = "POSSIBLE HIGH SWEEP";
-  else if (last.l < Math.min(...lows.slice(-10,-1)) && last.c > prev.c) sweep = "POSSIBLE LOW SWEEP";
+  if (last.h > priorHigh && last.c < priorHigh) sweep = "BUY-SIDE SWEPT";
+  else if (last.l < priorLow && last.c > priorLow) sweep = "SELL-SIDE SWEPT";
+  else if (last.h > shortHigh && last.c < last.o) sweep = "POSSIBLE HIGH SWEEP";
+  else if (last.l < shortLow && last.c > last.o) sweep = "POSSIBLE LOW SWEEP";
 
   setText("sweep",sweep);
 
@@ -595,8 +601,8 @@ function analyzeMarket() {
   setText("orderBlock",ob);
 
   // Break of Structure
-  const previousHigh = Math.max(...highs.slice(-11,-1));
-  const previousLow = Math.min(...lows.slice(-11,-1));
+  const previousHigh = Math.max(...highs.slice(-21,-1));
+  const previousLow = Math.min(...lows.slice(-21,-1));
 
   let bos = "NONE";
   if (last.c > previousHigh) bos = "BULLISH BOS";
@@ -612,31 +618,50 @@ function analyzeMarket() {
   // Multi timeframe data
   updateMTF(currentMarket);
 
-  // Signal scoring
+  // Smart SMC confluence scoring.
+  // Structure break or a liquidity sweep is required as a trade trigger.
   let buyScore = 0;
   let sellScore = 0;
 
-  if (bias === "BULLISH") buyScore++;
-  if (bias === "BEARISH") sellScore++;
+  const bullishSweep = sweep === "SELL-SIDE SWEPT" || sweep === "POSSIBLE LOW SWEEP";
+  const bearishSweep = sweep === "BUY-SIDE SWEPT" || sweep === "POSSIBLE HIGH SWEEP";
+  const bullishStructure = bos === "BULLISH BOS";
+  const bearishStructure = bos === "BEARISH BOS";
+  const bullishCandle = last.c > last.o;
+  const bearishCandle = last.c < last.o;
+  const bullishRsi = rsi !== null && rsi >= 48 && rsi <= 68;
+  const bearishRsi = rsi !== null && rsi >= 32 && rsi <= 52;
 
-  if (sweep.includes("LOW")) buyScore++;
-  if (sweep.includes("HIGH")) sellScore++;
+  if (bias === "BULLISH") buyScore += 1;
+  if (bias === "BEARISH") sellScore += 1;
 
-  if (fvg === "BULLISH FVG") buyScore++;
-  if (fvg === "BEARISH FVG") sellScore++;
+  if (bullishStructure) buyScore += 2;
+  if (bearishStructure) sellScore += 2;
 
-  if (ob === "BULLISH OB") buyScore++;
-  if (ob === "BEARISH OB") sellScore++;
+  if (bullishSweep) buyScore += 2;
+  if (bearishSweep) sellScore += 2;
 
-  if (bos === "BULLISH BOS") buyScore++;
-  if (bos === "BEARISH BOS") sellScore++;
+  if (fvg === "BULLISH FVG") buyScore += 1;
+  if (fvg === "BEARISH FVG") sellScore += 1;
 
-  if (last.c < midpoint) buyScore++;
-  if (last.c > midpoint) sellScore++;
+  if (ob === "BULLISH OB") buyScore += 1;
+  if (ob === "BEARISH OB") sellScore += 1;
+
+  if (last.c < midpoint) buyScore += 1;
+  if (last.c > midpoint) sellScore += 1;
+
+  if (bullishRsi) buyScore += 1;
+  if (bearishRsi) sellScore += 1;
+
+  if (bullishCandle) buyScore += 1;
+  if (bearishCandle) sellScore += 1;
+
+  const bullishTrigger = bullishStructure || bullishSweep;
+  const bearishTrigger = bearishStructure || bearishSweep;
 
   let signal = "WAIT";
-  if (buyScore >= 3 && buyScore > sellScore) signal = "BUY";
-  if (sellScore >= 3 && sellScore > buyScore) signal = "SELL";
+  if (buyScore >= 4 && bullishTrigger && buyScore >= sellScore + 2) signal = "BUY";
+  if (sellScore >= 4 && bearishTrigger && sellScore >= buyScore + 2) signal = "SELL";
 
   chartSignal = signal === "WAIT" ? null : {
     type: signal,
@@ -644,7 +669,13 @@ function analyzeMarket() {
     time: last.t
   };
 
-  updateSignal(signal,last.c,avgRange,buyScore,sellScore);
+  const signalDetail = signal === "BUY"
+    ? "Bullish SMC setup confirmed • Buy score: " + buyScore + " | Sell score: " + sellScore
+    : signal === "SELL"
+      ? "Bearish SMC setup confirmed • Sell score: " + sellScore + " | Buy score: " + buyScore
+      : "Waiting for structure/liquidity trigger • Buy: " + buyScore + " | Sell: " + sellScore;
+
+  updateSignal(signal,last.c,avgRange,buyScore,sellScore,signalDetail);
 }
 
 async function updateMTF(market=currentMarket) {
@@ -674,16 +705,14 @@ async function updateMTF(market=currentMarket) {
   }
 }
 
-function updateSignal(signal,entry,range,buyScore,sellScore) {
+function updateSignal(signal,entry,range,buyScore,sellScore,detail="") {
   const el = $("signal");
   el.textContent = signal;
   el.className = signal === "BUY" ? "buy" :
     signal === "SELL" ? "sell" : "neutral";
 
   if (signal === "WAIT") {
-    setText("signalReason",
-      "Not enough conditions aligned. Buy score: " +
-      buyScore + " | Sell score: " + sellScore);
+    setText("signalReason",detail || ("Waiting for a valid setup. Buy: " + buyScore + " | Sell: " + sellScore));
     ["entry","sl","tp1","tp2","tp3"].forEach(id=>setText(id,"--"));
     return;
   }
@@ -698,10 +727,7 @@ function updateSignal(signal,entry,range,buyScore,sellScore) {
   setText("tp2",fmt(entry+direction*stopDistance*2));
   setText("tp3",fmt(entry+direction*stopDistance*3));
 
-  setText("signalReason",
-    "Conditions aligned. Buy: " + buyScore +
-    " | Sell: " + sellScore +
-    " • Confirm before entry");
+  setText("signalReason",detail || ("Conditions aligned. Buy: " + buyScore + " | Sell: " + sellScore + " • Confirm before entry"));
 }
 
 function drawChart() {
