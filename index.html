@@ -342,8 +342,27 @@ function normalizeCandles(json) {
     list = json.data.candles;
   }
 
+  
+function normalizeCandles(json) {
+  let list = [];
+
+  if (Array.isArray(json)) {
+    list = json;
+  } else if (Array.isArray(json.points)) {
+    list = json.points;
+  } else if (Array.isArray(json.candles)) {
+    list = json.candles;
+  } else if (Array.isArray(json.data)) {
+    list = json.data;
+  } else if (Array.isArray(json.results)) {
+    list = json.results;
+  } else if (json.data && Array.isArray(json.data.candles)) {
+    list = json.data.candles;
+  }
+
   return list.map(c => {
     const t = Number(c.t ?? c.time ?? c.timestamp);
+
     return {
       t: t < 1000000000000 ? t * 1000 : t,
       o: Number(c.o ?? c.open),
@@ -360,6 +379,7 @@ function normalizeCandles(json) {
     Number.isFinite(c.c)
   ).sort((a,b) => a.t-b.t);
 }
+
 
 async function loadSpot() {
   try {
