@@ -4,7 +4,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>XAUUSD SMC Scanner</title>
+<title>XAUUSD / BTCUSD SMC Scanner</title>
 
 <style>
 :root {
@@ -162,15 +162,15 @@ canvas {
 
 <header>
   <div>
-    <h1>GOLD SMC SCANNER</h1>
-    <div class="subtitle">XAUUSD • Smart Money Concepts • Market Dashboard</div>
+    <h1>SMC MARKET SCANNER</h1>
+    <div class="subtitle">XAUUSD & BTCUSD • Smart Money Concepts • Market Dashboard</div>
   </div>
   <div class="status" id="connection">Connecting...</div>
 </header>
 
 <div class="grid">
   <div class="panel">
-    <div class="label">XAUUSD SPOT PRICE</div>
+    <div class="label" id="priceLabel">XAUUSD SPOT PRICE</div>
     <div class="value gold" id="price">Loading...</div>
     <div class="small" id="priceTime">Waiting for data</div>
   </div>
@@ -198,7 +198,12 @@ canvas {
 
   <div>
     <div class="panel">
-      <div class="section-title">XAUUSD PRICE CHART</div>
+      <div class="section-title" id="chartTitle">XAUUSD PRICE CHART</div>
+
+      <div class="timeframes" style="margin-bottom:8px">
+        <button class="active" data-market="xau">GOLD · XAUUSD</button>
+        <button data-market="bitcoin">BITCOIN · BTCUSD</button>
+      </div>
 
       <div class="timeframes">
         <button class="active" data-tf="5m">M5</button>
@@ -300,7 +305,7 @@ canvas {
 </div>
 
 <div class="footer">
-  XAUUSD SMC SCANNER • Market data may be delayed or unavailable.
+  XAUUSD / BTCUSD SMC SCANNER • Market data may be delayed or unavailable.
 </div>
 
 </div>
@@ -311,7 +316,13 @@ const API = "https://xaus.com/api/v1";
 let spotPrice = null;
 let candles = [];
 let currentTF = "5m";
-let refreshTimer = null;
+let currentMarket = "xau";
+let chartRequestId = 0;
+
+const MARKET_CONFIG = {
+  xau: {symbol:"xau", label:"XAUUSD", priceLabel:"XAUUSD SPOT PRICE", chartTitle:"XAUUSD PRICE CHART"},
+  bitcoin: {symbol:"bitcoin", label:"BTCUSD", priceLabel:"BTCUSD PRICE", chartTitle:"BTCUSD PRICE CHART"}
+};
 
 const $ = id => document.getElementById(id);
 
@@ -371,35 +382,28 @@ function normalizeCandles(json) {
 
 async function loadSpot() {
   try {
-    const response = await fetch(API + "/spot?compact=1", {
-      cache:"no-store"
-    });
-
+    const response = await fetch(API + "/spot?compact=1", {cache:"no-store"});
     if (!response.ok) throw new Error("Spot API error");
-
     const data = await response.json();
-    const value = Number(data.spot_usd_oz);
-
-    if (!Number.isFinite(value) || value <= 0) {
-      throw new Error("Invalid spot price");
-    }
-
+    const value = Number(currentMarket === "bitcoin" ? data.btc_usd : data.spot_usd_oz);
+    if (!Number.isFinite(value) || value <= 0) throw new Error("Invalid market price");
     spotPrice = value;
     setText("price", "$" + fmt(value));
-
-    const time = data.price_as_of || data.data_state?.as_of;
-    setText("priceTime", time ? "As of " + new Date(time).toLocaleTimeString() : "Latest spot price");
-
-    setConnection("● Connected", true);
+    const time = data.price_as_of || data.updated_at || data.data_state?.as_of;
+    setText("priceTime", time ? "As of " + new Date(time).toLocaleTimeString() : "Latest market price");
+    setConnection("● " + MARKET_CONFIG[currentMarket].label + " Connected", true);
+    drawChart();
   } catch (error) {
-    setConnection("● Spot connection error", false);
-    setText("priceTime", "Unable to update spot price");
+    setConnection("● Price connection error", false);
+    setText("priceTime", "Unable to update market price");
+    console.error(error);
   }
 }
 
-async function getChart(interval) {
+async function getChart(interval, market=currentMarket) {
   const range = interval === "240m" ? "7d" : "1d";
-  const url = API + "/chart?symbol=xau&range=" + range +
+  const symbol = MARKET_CONFIG[market].symbol;
+  const url = API + "/chart?symbol=" + symbol + "&range=" + range +
     "&interval=" + interval;
 
   const response = await fetch(url, {cache:"no-store"});
@@ -438,8 +442,10 @@ function aggregateH4(source) {
 
 async function loadChart(tf=currentTF) {
   currentTF = tf;
+  const requestId = ++chartRequestId;
+  const marketAtRequest = currentMarket;
   setText("activeTF", tf === "240m" ? "H4" : tf.toUpperCase());
-  setText("chartStatus", "Loading candles...");
+  setText("chartStatus", "Loading " + MARKET_CONFIG[marketAtRequest].label + " candles...");
 
   document.querySelectorAll("[data-tf]").forEach(button => {
     button.classList.toggle("active", button.dataset.tf === tf);
@@ -449,25 +455,26 @@ async function loadChart(tf=currentTF) {
     let data;
 
     if (tf === "240m") {
-      const h1 = await getChart("60m");
+      const h1 = await getChart("60m", marketAtRequest);
       data = aggregateH4(h1);
     } else {
-      data = await getChart(tf);
+      data = await getChart(tf, marketAtRequest);
     }
 
+    if (requestId !== chartRequestId) return;
     if (!data.length) throw new Error("No candle data");
-
     candles = data.slice(-120);
 
     setText("candleCount", candles.length + " candles loaded");
-    setText("chartStatus", "Chart updated successfully");
+    setText("chartStatus", MARKET_CONFIG[marketAtRequest].label + " chart updated successfully");
 
     drawChart();
     analyzeMarket();
     setText("lastUpdate", new Date().toLocaleTimeString());
 
   } catch (error) {
-    setText("chartStatus", "Chart data unavailable. Please try again.");
+    if (requestId !== chartRequestId) return;
+    setText("chartStatus", MARKET_CONFIG[marketAtRequest].label + " chart data unavailable. Please try again.");
     setText("candleCount", "No candles loaded");
     console.error(error);
   }
@@ -599,7 +606,7 @@ function analyzeMarket() {
   );
 
   // Multi timeframe data
-  updateMTF();
+  updateMTF(currentMarket);
 
   // Signal scoring
   let buyScore = 0;
@@ -630,7 +637,7 @@ function analyzeMarket() {
   updateSignal(signal,last.c,avgRange,buyScore,sellScore);
 }
 
-async function updateMTF() {
+async function updateMTF(market=currentMarket) {
   const settings = [
     ["5m","mtf5"],
     ["15m","mtf15"],
@@ -640,7 +647,8 @@ async function updateMTF() {
 
   for (const [tf,id] of settings) {
     try {
-      const data = await getChart(tf);
+      const data = await getChart(tf,market);
+      if (market !== currentMarket) return;
       updateBiasElement(id,getBias(data));
     } catch {
       setText(id,"--");
@@ -648,7 +656,8 @@ async function updateMTF() {
   }
 
   try {
-    const h1 = await getChart("60m");
+    const h1 = await getChart("60m",market);
+    if (market !== currentMarket) return;
     updateBiasElement("mtf240",getBias(aggregateH4(h1)));
   } catch {
     setText("mtf240","--");
@@ -790,6 +799,36 @@ document.querySelectorAll("[data-tf]").forEach(button=>{
   button.addEventListener("click",()=>{
     loadChart(button.dataset.tf);
   });
+});
+
+function selectMarket(market) {
+  if (!MARKET_CONFIG[market] || market === currentMarket) return;
+  currentMarket = market;
+  spotPrice = null;
+  candles = [];
+  document.querySelectorAll("[data-market]").forEach(button => {
+    button.classList.toggle("active", button.dataset.market === market);
+  });
+  setText("priceLabel", MARKET_CONFIG[market].priceLabel);
+  setText("chartTitle", MARKET_CONFIG[market].chartTitle);
+  setText("price", "Loading...");
+  setText("priceTime", "Waiting for market data");
+  setText("candleCount", "Loading candles...");
+  setText("chartStatus", "Switching market...");
+  setText("marketBias", "--");
+  setText("biasDescription", "Waiting for candles");
+  setText("rsiValue", "--");
+  setText("rsiDescription", "Waiting for data");
+  ["sweep","fvg","orderBlock","bos","premium","mtf5","mtf15","mtf30","mtf60","mtf240","entry","sl","tp1","tp2","tp3","recentHigh","recentLow","avgRange","lastUpdate"].forEach(id => setText(id,"--"));
+  setText("signal","WAIT");
+  setText("signalReason","Waiting for market analysis");
+  drawChart();
+  loadSpot();
+  loadChart(currentTF);
+}
+
+document.querySelectorAll("[data-market]").forEach(button => {
+  button.addEventListener("click", () => selectMarket(button.dataset.market));
 });
 
 window.addEventListener("resize",drawChart);
