@@ -318,6 +318,7 @@ let candles = [];
 let currentTF = "5m";
 let currentMarket = "xau";
 let chartRequestId = 0;
+let chartSignal = null;
 
 const MARKET_CONFIG = {
   xau: {symbol:"xau", label:"XAUUSD", priceLabel:"XAUUSD SPOT PRICE", chartTitle:"XAUUSD PRICE CHART"},
@@ -470,10 +471,13 @@ async function loadChart(tf=currentTF) {
 
     drawChart();
     analyzeMarket();
+    drawChart();
     setText("lastUpdate", new Date().toLocaleTimeString());
 
   } catch (error) {
     if (requestId !== chartRequestId) return;
+    chartSignal = null;
+    drawChart();
     setText("chartStatus", MARKET_CONFIG[marketAtRequest].label + " chart data unavailable. Please try again.");
     setText("candleCount", "No candles loaded");
     console.error(error);
@@ -634,6 +638,12 @@ function analyzeMarket() {
   if (buyScore >= 3 && buyScore > sellScore) signal = "BUY";
   if (sellScore >= 3 && sellScore > buyScore) signal = "SELL";
 
+  chartSignal = signal === "WAIT" ? null : {
+    type: signal,
+    price: last.c,
+    time: last.t
+  };
+
   updateSignal(signal,last.c,avgRange,buyScore,sellScore);
 }
 
@@ -780,6 +790,38 @@ function drawChart() {
     ctx.setLineDash([]);
   }
 
+  // Latest SMC trade signal marker
+  if (chartSignal && candles.length) {
+    const signalIndex = candles.findIndex(c => c.t === chartSignal.time);
+    if (signalIndex >= 0) {
+      const candle = candles[signalIndex];
+      const x = pad.left + signalIndex*slot + slot/2;
+      const isBuy = chartSignal.type === "BUY";
+      const color = isBuy ? "#22c58b" : "#ff647c";
+      const tipY = isBuy
+        ? Math.min(height-pad.bottom-10, y(candle.l)+22)
+        : Math.max(pad.top+10, y(candle.h)-22);
+      const baseY = isBuy ? tipY+13 : tipY-13;
+
+      ctx.fillStyle = color;
+      ctx.beginPath();
+      ctx.moveTo(x, tipY);
+      ctx.lineTo(x-7, baseY);
+      ctx.lineTo(x+7, baseY);
+      ctx.closePath();
+      ctx.fill();
+
+      ctx.font = "bold 11px Arial";
+      ctx.textAlign = "center";
+      ctx.fillText(
+        isBuy ? "BUY" : "SELL",
+        x,
+        isBuy ? Math.min(height-pad.bottom-2, baseY+15) : Math.max(pad.top+12, baseY-7)
+      );
+      ctx.textAlign = "left";
+    }
+  }
+
   ctx.fillStyle="#91a0b8";
   ctx.font="10px Arial";
 
@@ -806,6 +848,7 @@ function selectMarket(market) {
   currentMarket = market;
   spotPrice = null;
   candles = [];
+  chartSignal = null;
   document.querySelectorAll("[data-market]").forEach(button => {
     button.classList.toggle("active", button.dataset.market === market);
   });
