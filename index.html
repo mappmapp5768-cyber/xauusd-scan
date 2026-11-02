@@ -660,22 +660,43 @@ function analyzeMarket() {
   const bearishTrigger = bearishStructure || bearishSweep;
 
   let signal = "WAIT";
-  if (buyScore >= 4 && bullishTrigger && buyScore >= sellScore + 2) signal = "BUY";
-  if (sellScore >= 4 && bearishTrigger && sellScore >= buyScore + 2) signal = "SELL";
+  let potentialSignal = null;
 
-  chartSignal = signal === "WAIT" ? null : {
-    type: signal,
-    price: last.c,
-    time: last.t
-  };
+  if (buyScore >= 4 && bullishTrigger && buyScore >= sellScore + 2) {
+    signal = "BUY";
+  } else if (sellScore >= 4 && bearishTrigger && sellScore >= buyScore + 2) {
+    signal = "SELL";
+  } else if (buyScore >= 2 && buyScore > sellScore &&
+             (bias === "BULLISH" || fvg === "BULLISH FVG" || ob === "BULLISH OB")) {
+    potentialSignal = "BUY";
+  } else if (sellScore >= 2 && sellScore > buyScore &&
+             (bias === "BEARISH" || fvg === "BEARISH FVG" || ob === "BEARISH OB")) {
+    potentialSignal = "SELL";
+  }
+
+  chartSignal = signal === "BUY" || signal === "SELL"
+    ? {type:signal, potential:false, price:last.c, time:last.t}
+    : potentialSignal
+      ? {type:potentialSignal, potential:true, price:last.c, time:last.t}
+      : null;
+
+  const displaySignal = signal !== "WAIT"
+    ? signal
+    : potentialSignal
+      ? "POTENTIAL " + potentialSignal
+      : "WAIT";
 
   const signalDetail = signal === "BUY"
-    ? "Bullish SMC setup confirmed • Buy score: " + buyScore + " | Sell score: " + sellScore
+    ? "Bullish SMC setup confirmed • Buy: " + buyScore + " | Sell: " + sellScore
     : signal === "SELL"
-      ? "Bearish SMC setup confirmed • Sell score: " + sellScore + " | Buy score: " + buyScore
-      : "Waiting for structure/liquidity trigger • Buy: " + buyScore + " | Sell: " + sellScore;
+      ? "Bearish SMC setup confirmed • Sell: " + sellScore + " | Buy: " + buyScore
+      : potentialSignal === "BUY"
+        ? "Early bullish setup — wait for BOS or liquidity sweep • Buy: " + buyScore + " | Sell: " + sellScore
+        : potentialSignal === "SELL"
+          ? "Early bearish setup — wait for BOS or liquidity sweep • Sell: " + sellScore + " | Buy: " + buyScore
+          : "Waiting for setup • Buy: " + buyScore + " | Sell: " + sellScore;
 
-  updateSignal(signal,last.c,avgRange,buyScore,sellScore,signalDetail);
+  updateSignal(displaySignal,last.c,avgRange,buyScore,sellScore,signalDetail);
 }
 
 async function updateMTF(market=currentMarket) {
@@ -708,10 +729,10 @@ async function updateMTF(market=currentMarket) {
 function updateSignal(signal,entry,range,buyScore,sellScore,detail="") {
   const el = $("signal");
   el.textContent = signal;
-  el.className = signal === "BUY" ? "buy" :
-    signal === "SELL" ? "sell" : "neutral";
+  el.className = signal.includes("BUY") ? "buy" :
+    signal.includes("SELL") ? "sell" : "neutral";
 
-  if (signal === "WAIT") {
+  if (signal !== "BUY" && signal !== "SELL") {
     setText("signalReason",detail || ("Waiting for a valid setup. Buy: " + buyScore + " | Sell: " + sellScore));
     ["entry","sl","tp1","tp2","tp3"].forEach(id=>setText(id,"--"));
     return;
@@ -823,7 +844,9 @@ function drawChart() {
       const candle = candles[signalIndex];
       const x = pad.left + signalIndex*slot + slot/2;
       const isBuy = chartSignal.type === "BUY";
-      const color = isBuy ? "#22c58b" : "#ff647c";
+      const color = isBuy
+        ? (chartSignal.potential ? "#8bd9b8" : "#22c58b")
+        : (chartSignal.potential ? "#ffb0bd" : "#ff647c");
       const tipY = isBuy
         ? Math.min(height-pad.bottom-10, y(candle.l)+22)
         : Math.max(pad.top+10, y(candle.h)-22);
@@ -840,7 +863,7 @@ function drawChart() {
       ctx.font = "bold 11px Arial";
       ctx.textAlign = "center";
       ctx.fillText(
-        isBuy ? "BUY" : "SELL",
+        chartSignal.potential ? (isBuy ? "POT BUY" : "POT SELL") : (isBuy ? "BUY" : "SELL"),
         x,
         isBuy ? Math.min(height-pad.bottom-2, baseY+15) : Math.max(pad.top+12, baseY-7)
       );
