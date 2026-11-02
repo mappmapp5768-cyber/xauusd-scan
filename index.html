@@ -263,23 +263,23 @@ canvas {
       </div>
 
       <div class="row">
-        <span>Entry</span>
+        <span id="entryLabel">Entry</span>
         <strong id="entry">--</strong>
       </div>
       <div class="row">
-        <span>Stop Loss</span>
+        <span id="slLabel">Stop Loss</span>
         <strong class="red" id="sl">--</strong>
       </div>
       <div class="row">
-        <span>Take Profit 1</span>
+        <span id="tp1Label">Take Profit 1</span>
         <strong class="green" id="tp1">--</strong>
       </div>
       <div class="row">
-        <span>Take Profit 2</span>
+        <span id="tp2Label">Take Profit 2</span>
         <strong class="green" id="tp2">--</strong>
       </div>
       <div class="row">
-        <span>Take Profit 3</span>
+        <span id="tp3Label">Take Profit 3</span>
         <strong class="green" id="tp3">--</strong>
       </div>
     </div>
@@ -514,10 +514,13 @@ function getBias(data) {
   const closes = data.map(c=>c.c);
   const fast = sma(closes,9);
   const slow = sma(closes,21);
+  const previousFast = sma(closes.slice(0,-1),9);
+  const previousSlow = sma(closes.slice(0,-1),21);
   const last = closes[closes.length-1];
 
-  if (fast > slow && last > slow) return "BULLISH";
-  if (fast < slow && last < slow) return "BEARISH";
+  // Require both price position and moving-average direction.
+  if (fast > slow && last > slow && fast > previousFast && slow >= previousSlow) return "BULLISH";
+  if (fast < slow && last < slow && fast < previousFast && slow <= previousSlow) return "BEARISH";
   return "NEUTRAL";
 }
 
@@ -732,13 +735,22 @@ function updateSignal(signal,entry,range,buyScore,sellScore,detail="") {
   el.className = signal.includes("BUY") ? "buy" :
     signal.includes("SELL") ? "sell" : "neutral";
 
-  if (signal !== "BUY" && signal !== "SELL") {
+  const isPotential = signal.startsWith("POTENTIAL ");
+  const isTradeDirection = signal === "BUY" || signal === "SELL" ||
+    signal === "POTENTIAL BUY" || signal === "POTENTIAL SELL";
+
+  if (!isTradeDirection) {
     setText("signalReason",detail || ("Waiting for a valid setup. Buy: " + buyScore + " | Sell: " + sellScore));
     ["entry","sl","tp1","tp2","tp3"].forEach(id=>setText(id,"--"));
+    setText("entryLabel","Entry");
+    setText("slLabel","Stop Loss");
+    setText("tp1Label","Take Profit 1");
+    setText("tp2Label","Take Profit 2");
+    setText("tp3Label","Take Profit 3");
     return;
   }
 
-  const isBuy = signal === "BUY";
+  const isBuy = signal.includes("BUY");
   const stopDistance = Math.max(range*1.5,0.5);
   const direction = isBuy ? 1 : -1;
 
@@ -748,7 +760,16 @@ function updateSignal(signal,entry,range,buyScore,sellScore,detail="") {
   setText("tp2",fmt(entry+direction*stopDistance*2));
   setText("tp3",fmt(entry+direction*stopDistance*3));
 
-  setText("signalReason",detail || ("Conditions aligned. Buy: " + buyScore + " | Sell: " + sellScore + " • Confirm before entry"));
+  setText("entryLabel",isPotential ? "Potential Entry" : "Entry");
+  setText("slLabel",isPotential ? "Estimated Stop Loss" : "Stop Loss");
+  setText("tp1Label",isPotential ? "Estimated TP 1" : "Take Profit 1");
+  setText("tp2Label",isPotential ? "Estimated TP 2" : "Take Profit 2");
+  setText("tp3Label",isPotential ? "Estimated TP 3" : "Take Profit 3");
+
+  const note = isPotential
+    ? "Planning levels only — wait for BOS/liquidity confirmation before entry."
+    : "Confirmed setup by scanner rules — verify before trading.";
+  setText("signalReason",(detail ? detail + " • " : "") + note);
 }
 
 function drawChart() {
