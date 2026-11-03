@@ -319,6 +319,7 @@ let currentTF = "5m";
 let currentMarket = "xau";
 let chartRequestId = 0;
 let chartSignal = null;
+let historicalSignals = [];
 
 const MARKET_CONFIG = {
   xau: {symbol:"xau", label:"XAUUSD", priceLabel:"XAUUSD SPOT PRICE", chartTitle:"XAUUSD PRICE CHART"},
@@ -477,6 +478,7 @@ async function loadChart(tf=currentTF) {
   } catch (error) {
     if (requestId !== chartRequestId) return;
     chartSignal = null;
+    historicalSignals = [];
     drawChart();
     setText("chartStatus", MARKET_CONFIG[marketAtRequest].label + " chart data unavailable. Please try again.");
     setText("candleCount", "No candles loaded");
@@ -529,6 +531,87 @@ function updateBiasElement(id,bias) {
   el.textContent = bias;
   el.className = bias === "BULLISH" ? "buy" :
     bias === "BEARISH" ? "sell" : "neutral";
+}
+
+
+function scanHistoricalSignals(data) {
+  const found = [];
+  if (!Array.isArray(data) || data.length < 25) return found;
+
+  for (let i = 21; i < data.length - 1; i++) {
+    const window = data.slice(0, i + 1);
+    const current = data[i];
+    const previous = data[i - 1];
+    const highs = window.map(c => c.h);
+    const lows = window.map(c => c.l);
+    const bias = getBias(window);
+    const rsi = calculateRSI(window);
+    const priorHigh = Math.max(...highs.slice(-21, -1));
+    const priorLow = Math.min(...lows.slice(-21, -1));
+    const shortHigh = Math.max(...highs.slice(-10, -1));
+    const shortLow = Math.min(...lows.slice(-10, -1));
+
+    let sweep = "NONE";
+    if (current.h > priorHigh && current.c < priorHigh) sweep = "BUY-SIDE SWEPT";
+    else if (current.l < priorLow && current.c > priorLow) sweep = "SELL-SIDE SWEPT";
+    else if (current.h > shortHigh && current.c < current.o) sweep = "POSSIBLE HIGH SWEEP";
+    else if (current.l < shortLow && current.c > current.o) sweep = "POSSIBLE LOW SWEEP";
+
+    const candle3 = window[window.length - 3];
+    let fvg = "NONE";
+    if (current.l > candle3.h) fvg = "BULLISH FVG";
+    else if (current.h < candle3.l) fvg = "BEARISH FVG";
+
+    let ob = "NONE";
+    if (current.c > previous.h && previous.c < previous.o) ob = "BULLISH OB";
+    else if (current.c < previous.l && previous.c > previous.o) ob = "BEARISH OB";
+
+    let bos = "NONE";
+    if (current.c > priorHigh) bos = "BULLISH BOS";
+    else if (current.c < priorLow) bos = "BEARISH BOS";
+
+    const priorRangeHigh = Math.max(...highs.slice(-20, -1));
+    const priorRangeLow = Math.min(...lows.slice(-20, -1));
+    const midpoint = (priorRangeHigh + priorRangeLow) / 2;
+    const bullishSweep = sweep === "SELL-SIDE SWEPT" || sweep === "POSSIBLE LOW SWEEP";
+    const bearishSweep = sweep === "BUY-SIDE SWEPT" || sweep === "POSSIBLE HIGH SWEEP";
+    const bullishStructure = bos === "BULLISH BOS";
+    const bearishStructure = bos === "BEARISH BOS";
+    const bullishRsi = rsi !== null && rsi >= 48 && rsi <= 68;
+    const bearishRsi = rsi !== null && rsi >= 32 && rsi <= 52;
+
+    let buyScore = 0;
+    let sellScore = 0;
+    if (bias === "BULLISH") buyScore++;
+    if (bias === "BEARISH") sellScore++;
+    if (bullishStructure) buyScore += 2;
+    if (bearishStructure) sellScore += 2;
+    if (bullishSweep) buyScore += 2;
+    if (bearishSweep) sellScore += 2;
+    if (fvg === "BULLISH FVG") buyScore++;
+    if (fvg === "BEARISH FVG") sellScore++;
+    if (ob === "BULLISH OB") buyScore++;
+    if (ob === "BEARISH OB") sellScore++;
+    if (current.c < midpoint) buyScore++;
+    if (current.c > midpoint) sellScore++;
+    if (bullishRsi) buyScore++;
+    if (bearishRsi) sellScore++;
+    if (current.c > current.o) buyScore++;
+    if (current.c < current.o) sellScore++;
+
+    let type = null;
+    if (buyScore >= 4 && (bullishStructure || bullishSweep) && buyScore >= sellScore + 2) type = "BUY";
+    else if (sellScore >= 4 && (bearishStructure || bearishSweep) && sellScore >= buyScore + 2) type = "SELL";
+
+    if (type) {
+      const lastFound = found[found.length - 1];
+      if (!lastFound || i - lastFound.index >= 5 || lastFound.type !== type) {
+        found.push({index:i,time:current.t,type,price:current.c});
+      }
+    }
+  }
+
+  return found.slice(-12);
 }
 
 function analyzeMarket() {
@@ -676,6 +759,8 @@ function analyzeMarket() {
              (bias === "BEARISH" || fvg === "BEARISH FVG" || ob === "BEARISH OB")) {
     potentialSignal = "SELL";
   }
+
+  historicalSignals = scanHistoricalSignals(candles);
 
   chartSignal = signal === "BUY" || signal === "SELL"
     ? {type:signal, potential:false, price:last.c, time:last.t}
@@ -858,39 +943,57 @@ function drawChart() {
     ctx.setLineDash([]);
   }
 
-  // Latest SMC trade signal marker
+  // Historical confirmed BUY/SELL markers
+  const markers = historicalSignals.map(item => ({
+    index:item.index, type:item.type, potential:false, historical:true
+  }));
+
+  // Add the current candle signal if it is not already represented.
   if (chartSignal && candles.length) {
-    const signalIndex = candles.findIndex(c => c.t === chartSignal.time);
-    if (signalIndex >= 0) {
-      const candle = candles[signalIndex];
-      const x = pad.left + signalIndex*slot + slot/2;
-      const isBuy = chartSignal.type === "BUY";
-      const color = isBuy
-        ? (chartSignal.potential ? "#8bd9b8" : "#22c58b")
-        : (chartSignal.potential ? "#ffb0bd" : "#ff647c");
-      const tipY = isBuy
-        ? Math.min(height-pad.bottom-10, y(candle.l)+22)
-        : Math.max(pad.top+10, y(candle.h)-22);
-      const baseY = isBuy ? tipY+13 : tipY-13;
-
-      ctx.fillStyle = color;
-      ctx.beginPath();
-      ctx.moveTo(x, tipY);
-      ctx.lineTo(x-7, baseY);
-      ctx.lineTo(x+7, baseY);
-      ctx.closePath();
-      ctx.fill();
-
-      ctx.font = "bold 11px Arial";
-      ctx.textAlign = "center";
-      ctx.fillText(
-        chartSignal.potential ? (isBuy ? "POT BUY" : "POT SELL") : (isBuy ? "BUY" : "SELL"),
-        x,
-        isBuy ? Math.min(height-pad.bottom-2, baseY+15) : Math.max(pad.top+12, baseY-7)
-      );
-      ctx.textAlign = "left";
+    const currentIndex = candles.findIndex(c => c.t === chartSignal.time);
+    if (currentIndex >= 0) {
+      markers.push({
+        index:currentIndex,
+        type:chartSignal.type,
+        potential:!!chartSignal.potential,
+        historical:false
+      });
     }
   }
+
+  markers.forEach(marker => {
+    const candle = candles[marker.index];
+    if (!candle) return;
+    const x = pad.left + marker.index*slot + slot/2;
+    const isBuy = marker.type === "BUY";
+    const color = isBuy
+      ? (marker.potential ? "#8bd9b8" : "#22c58b")
+      : (marker.potential ? "#ffb0bd" : "#ff647c");
+    const tipY = isBuy
+      ? Math.min(height-pad.bottom-10, y(candle.l)+22)
+      : Math.max(pad.top+10, y(candle.h)-22);
+    const baseY = isBuy ? tipY+13 : tipY-13;
+
+    ctx.fillStyle = color;
+    ctx.beginPath();
+    ctx.moveTo(x, tipY);
+    ctx.lineTo(x-7, baseY);
+    ctx.lineTo(x+7, baseY);
+    ctx.closePath();
+    ctx.fill();
+
+    ctx.font = "bold 10px Arial";
+    ctx.textAlign = "center";
+    const label = marker.potential
+      ? (isBuy ? "POT BUY" : "POT SELL")
+      : (isBuy ? "BUY" : "SELL");
+    ctx.fillText(
+      label,
+      x,
+      isBuy ? Math.min(height-pad.bottom-2, baseY+14) : Math.max(pad.top+12, baseY-7)
+    );
+    ctx.textAlign = "left";
+  });
 
   ctx.fillStyle="#91a0b8";
   ctx.font="10px Arial";
@@ -919,6 +1022,7 @@ function selectMarket(market) {
   spotPrice = null;
   candles = [];
   chartSignal = null;
+  historicalSignals = [];
   document.querySelectorAll("[data-market]").forEach(button => {
     button.classList.toggle("active", button.dataset.market === market);
   });
