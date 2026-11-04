@@ -784,7 +784,7 @@ function analyzeMarket() {
           ? "Early bearish setup — wait for BOS or liquidity sweep • Sell: " + sellScore + " | Buy: " + buyScore
           : "Waiting for setup • Buy: " + buyScore + " | Sell: " + sellScore;
 
-  updateSignal(displaySignal,last.c,avgRange,buyScore,sellScore,signalDetail);
+  updateSignal(displaySignal,last.c,avgRange,buyScore,sellScore,signalDetail,candles,ob,before,sweep);
 }
 
 async function updateMTF(market=currentMarket) {
@@ -814,7 +814,7 @@ async function updateMTF(market=currentMarket) {
   }
 }
 
-function updateSignal(signal,entry,range,buyScore,sellScore,detail="") {
+function updateSignal(signal,entry,range,buyScore,sellScore,detail="",sourceCandles=[],ob="NONE",previousCandle=null,sweep="NONE") {
   const el = $("signal");
   el.textContent = signal;
   el.className = signal.includes("BUY") ? "buy" :
@@ -836,24 +836,49 @@ function updateSignal(signal,entry,range,buyScore,sellScore,detail="") {
   }
 
   const isBuy = signal.includes("BUY");
-  const stopDistance = Math.max(range*1.5,0.5);
   const direction = isBuy ? 1 : -1;
+  const prior = sourceCandles.slice(-13,-1);
+  const swingLow = prior.length ? Math.min(...prior.map(c=>c.l)) : entry-range;
+  const swingHigh = prior.length ? Math.max(...prior.map(c=>c.h)) : entry+range;
+
+  // Anchor the stop beyond nearby market structure, including the latest
+  // sweep extreme or the detected opposing order-block candle.
+  let structureStop = isBuy ? swingLow : swingHigh;
+  if (isBuy && sweep === "SELL-SIDE SWEPT") structureStop = Math.min(structureStop,sourceCandles[sourceCandles.length-1].l);
+  if (!isBuy && sweep === "BUY-SIDE SWEPT") structureStop = Math.max(structureStop,sourceCandles[sourceCandles.length-1].h);
+  if (previousCandle && isBuy && ob === "BULLISH OB") structureStop = Math.min(structureStop,previousCandle.l);
+  if (previousCandle && !isBuy && ob === "BEARISH OB") structureStop = Math.max(structureStop,previousCandle.h);
+
+  const buffer = Math.max(range*0.15,Math.abs(entry)*0.00005,0.01);
+  let stop = isBuy ? structureStop-buffer : structureStop+buffer;
+  let risk = Math.abs(entry-stop);
+
+  // Avoid zero/invalid or implausibly tiny structural risk distances.
+  if (!Number.isFinite(risk) || risk < Math.max(range*0.25,buffer*2)) {
+    risk = Math.max(range,buffer*2);
+    stop = entry-direction*risk;
+  }
+
+  const tp1 = entry+direction*risk;
+  const tp2 = entry+direction*risk*2;
+  const tp3 = entry+direction*risk*3;
 
   setText("entry",fmt(entry));
-  setText("sl",fmt(entry-direction*stopDistance));
-  setText("tp1",fmt(entry+direction*stopDistance));
-  setText("tp2",fmt(entry+direction*stopDistance*2));
-  setText("tp3",fmt(entry+direction*stopDistance*3));
+  setText("sl",fmt(stop));
+  setText("tp1",fmt(tp1));
+  setText("tp2",fmt(tp2));
+  setText("tp3",fmt(tp3));
 
   setText("entryLabel",isPotential ? "Potential Entry" : "Entry");
-  setText("slLabel",isPotential ? "Estimated Stop Loss" : "Stop Loss");
-  setText("tp1Label",isPotential ? "Estimated TP 1" : "Take Profit 1");
-  setText("tp2Label",isPotential ? "Estimated TP 2" : "Take Profit 2");
-  setText("tp3Label",isPotential ? "Estimated TP 3" : "Take Profit 3");
+  setText("slLabel",isPotential ? "Estimated Structure SL" : "Structure Stop Loss");
+  setText("tp1Label",isPotential ? "Estimated TP 1 (1R)" : "Take Profit 1 (1R)");
+  setText("tp2Label",isPotential ? "Estimated TP 2 (2R)" : "Take Profit 2 (2R)");
+  setText("tp3Label",isPotential ? "Estimated TP 3 (3R)" : "Take Profit 3 (3R)");
 
+  const method = "SL beyond recent swing/liquidity/OB structure; targets use 1R, 2R and 3R.";
   const note = isPotential
-    ? "Planning levels only — wait for BOS/liquidity confirmation before entry."
-    : "Confirmed setup by scanner rules — verify before trading.";
+    ? "Planning levels only — wait for BOS/liquidity confirmation before entry. " + method
+    : "Scanner-confirmed setup; verify spread, candle close and risk before trading. " + method;
   setText("signalReason",(detail ? detail + " • " : "") + note);
 }
 
