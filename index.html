@@ -119,12 +119,12 @@ canvas{width:100%;height:350px;display:block}.small{font-size:11px;color:var(--m
 
   <section class="page" id="page-track">
     <div class="grid metrics">
-      <article class="panel"><div class="metric-label">Detected setups</div><div class="metric-value" id="trackCount">0</div><div class="metric-note">Within currently loaded candles</div></article>
-      <article class="panel"><div class="metric-label">Verified win rate</div><div class="metric-value">--</div><div class="metric-note">No verified trade outcomes</div></article>
-      <article class="panel"><div class="metric-label">Net R</div><div class="metric-value">--</div><div class="metric-note">Requires outcome tracking</div></article>
-      <article class="panel"><div class="metric-label">Record status</div><div class="metric-value" style="font-size:17px">Not initialized</div><div class="metric-note">No persistent trade database</div></article>
+      <article class="panel"><div class="metric-label">Total signals</div><div class="metric-value gold" id="trackCount">0</div><div class="metric-note">Confirmed BUY + SELL setups</div></article>
+      <article class="panel"><div class="metric-label">Wins · TP1 first</div><div class="metric-value green" id="trackWins">0</div><div class="metric-note">TP1 reached before Stop Loss</div></article>
+      <article class="panel"><div class="metric-label">Losses · SL first</div><div class="metric-value red" id="trackLosses">0</div><div class="metric-note">Stop Loss reached before TP1</div></article>
+      <article class="panel"><div class="metric-label">Win rate</div><div class="metric-value gold" id="trackWinRate">--</div><div class="metric-note" id="trackCompleted">0 completed · 0 pending</div></article>
     </div>
-    <article class="panel"><div class="panel-head"><div class="panel-title">Detected signal events</div><span class="tag">NOT PERFORMANCE RESULTS</span></div><div id="trackHistory" class="small">Waiting for candle history…</div><div class="notice" style="margin-top:14px">A reliable track record needs each signal timestamp, entry, stop, targets, execution assumptions and subsequent candle outcomes stored in a persistent database. Detected historical patterns are not proof of profitable trades; win rate and profit are intentionally left blank.</div></article>
+    <article class="panel"><div class="panel-head"><div class="panel-title">Signal results · loaded candle history</div><span class="tag" id="trackPending">0 PENDING</span></div><div id="trackHistory" class="small">Waiting for candle history…</div><div class="notice" style="margin-top:14px">Backtest rule: a signal is a win if TP1 (1R) is reached before Stop Loss; it is a loss if Stop Loss is reached first. If both levels are touched in one candle, it is counted as a loss conservatively. Pending signals are excluded from win rate. Results cover the currently loaded market and timeframe candles only; they are not broker-verified live results.</div></article>
   </section>
 
   <section class="page" id="page-analysis">
@@ -437,14 +437,58 @@ function scanHistoricalSignals(data) {
     if (type) {
       const lastFound = found[found.length - 1];
       if (!lastFound || i - lastFound.index >= 5 || lastFound.type !== type) {
-        found.push({index:i,time:current.t,type,price:current.c});
+        const isBuy = type === "BUY";
+        const direction = isBuy ? 1 : -1;
+        const prior = window.slice(-13, -1);
+        const swingLow = prior.length ? Math.min(...prior.map(c => c.l)) : current.c;
+        const swingHigh = prior.length ? Math.max(...prior.map(c => c.h)) : current.c;
+        let structureStop = isBuy ? swingLow : swingHigh;
+        if (isBuy && sweep === "SELL-SIDE SWEPT") structureStop = Math.min(structureStop, current.l);
+        if (!isBuy && sweep === "BUY-SIDE SWEPT") structureStop = Math.max(structureStop, current.h);
+        if (previous && isBuy && ob === "BULLISH OB") structureStop = Math.min(structureStop, previous.l);
+        if (previous && !isBuy && ob === "BEARISH OB") structureStop = Math.max(structureStop, previous.h);
+
+        const avgRange = window.slice(-14).reduce((sum,c) => sum + (c.h-c.l), 0) / Math.min(14,window.length);
+        const buffer = Math.max(avgRange*0.15,Math.abs(current.c)*0.00005,0.01);
+        let stop = isBuy ? structureStop-buffer : structureStop+buffer;
+        let risk = Math.abs(current.c-stop);
+        if (!Number.isFinite(risk) || risk < Math.max(avgRange*0.25,buffer*2)) {
+          risk = Math.max(avgRange,buffer*2);
+          stop = current.c-direction*risk;
+        }
+        const target1 = current.c+direction*risk;
+        let outcome = "PENDING";
+        let outcomeTime = null;
+        for (let j=i+1; j<data.length; j++) {
+          const bar = data[j];
+          const stopHit = isBuy ? bar.l <= stop : bar.h >= stop;
+          const targetHit = isBuy ? bar.h >= target1 : bar.l <= target1;
+          if (stopHit && targetHit) {
+            outcome = "LOSS";
+            outcomeTime = bar.t;
+            break;
+          }
+          if (stopHit) {
+            outcome = "LOSS";
+            outcomeTime = bar.t;
+            break;
+          }
+          if (targetHit) {
+            outcome = "WIN";
+            outcomeTime = bar.t;
+            break;
+          }
+        }
+        found.push({
+          index:i,time:current.t,type,price:current.c,stop,target1,
+          outcome,outcomeTime,risk
+        });
       }
     }
   }
 
-  return found.slice(-12);
+  return found;
 }
-
 function analyzeMarket() {
   if (candles.length < 22) {
     setText("marketBias","NEED DATA");
@@ -942,11 +986,14 @@ setInterval(()=>{
     const target=document.getElementById(targetId);
     if(!target) return;
     const items=typeof historicalSignals!=="undefined"&&Array.isArray(historicalSignals)?historicalSignals:[];
-    if(!items.length){target.innerHTML='<div class="empty"><strong>No detected setups in the loaded candle window</strong>Signals will appear here when the market feed returns enough candles and the scanner finds a setup.</div>';return;}
+    if(!items.length){target.innerHTML='<div class="empty"><strong>No confirmed signals in the loaded candle history</strong>BUY and SELL results will appear here when the scanner detects setups.</div>';return;}
     target.innerHTML=items.slice().reverse().map(item=>{
       const side=item.type==="BUY"?"buy":"sell";
+      const outcome=item.outcome||"PENDING";
+      const outcomeClass=outcome==="WIN"?"buy":outcome==="LOSS"?"sell":"neutral";
       const when=new Date(item.time).toLocaleString();
-      return '<div class="history-item"><strong class="'+side+'">'+item.type+'</strong><span>'+when+'</span><strong>'+Number(item.price).toFixed(2)+'</strong></div>';
+      const resultText=outcome==="PENDING"?"PENDING":outcome;
+      return '<div class="history-item"><strong class="'+side+'">'+item.type+'</strong><span>'+when+' · Entry '+Number(item.price).toFixed(2)+'</span><strong class="'+outcomeClass+'">'+resultText+'</strong></div>';
     }).join("");
   }
   function renderExtraPanels(){
@@ -966,8 +1013,18 @@ setInterval(()=>{
     put("analysisHigh",document.getElementById("recentHigh")?.textContent||"--");
     put("analysisLow",document.getElementById("recentLow")?.textContent||"--");
     put("analysisUpdated",document.getElementById("lastUpdate")?.textContent||"--");
-    const count=typeof historicalSignals!=="undefined"&&Array.isArray(historicalSignals)?historicalSignals.length:0;
-    put("trackCount",String(count));
+    const items=typeof historicalSignals!=="undefined"&&Array.isArray(historicalSignals)?historicalSignals:[];
+    const wins=items.filter(item=>item.outcome==="WIN").length;
+    const losses=items.filter(item=>item.outcome==="LOSS").length;
+    const pending=items.length-wins-losses;
+    const completed=wins+losses;
+    const rate=completed?((wins/completed)*100).toFixed(1)+"%":"--";
+    put("trackCount",String(items.length));
+    put("trackWins",String(wins));
+    put("trackLosses",String(losses));
+    put("trackWinRate",rate);
+    put("trackCompleted",completed+" completed · "+pending+" pending");
+    put("trackPending",pending+" PENDING");
     renderHistory("historyList");renderHistory("trackHistory");
     const status=document.getElementById("connection")?.textContent||"Checking feed";
     put("sideFeedStatus",status);
