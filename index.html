@@ -1006,7 +1006,6 @@ setInterval(()=>{
     parent.appendChild(badge);
   }
   function renderNews(data) {
-    const counts = data.counts || {};
     const allArticles = Array.isArray(data.articles) ? data.articles : [];
     const now = Date.now();
     const cutoff = now - FRESHNESS_HOURS * 60 * 60 * 1000;
@@ -1016,12 +1015,22 @@ setInterval(()=>{
         publishedAt <= now + 5 * 60 * 1000 && validNewsUrl(item.link);
     });
     const staleCount = allArticles.length - freshArticles.length;
+    const freshCounts = freshArticles.reduce((result, item) => {
+      const label = String(item.label || "NEUTRAL").toUpperCase();
+      if (label === "BULLISH") result.bullish++;
+      else if (label === "BEARISH") result.bearish++;
+      else result.neutral++;
+      if (String(item.impact || "").toUpperCase() === "HIGH") result.highImpact++;
+      return result;
+    }, {bullish:0, bearish:0, neutral:0, highImpact:0});
+    const freshOverall = freshCounts.bullish > freshCounts.bearish ? "BULLISH" :
+      freshCounts.bearish > freshCounts.bullish ? "BEARISH" : "NEUTRAL";
 
-    $news("newsOverall").textContent = data.overall || "NEUTRAL";
-    $news("newsOverall").className = "metric-value " + String(data.overall || "neutral").toLowerCase();
-    $news("newsBullish").textContent = counts.bullish ?? 0;
-    $news("newsBearish").textContent = counts.bearish ?? 0;
-    $news("newsHighImpact").textContent = data.highImpact ?? 0;
+    $news("newsOverall").textContent = freshOverall;
+    $news("newsOverall").className = "metric-value " + freshOverall.toLowerCase();
+    $news("newsBullish").textContent = freshCounts.bullish;
+    $news("newsBearish").textContent = freshCounts.bearish;
+    $news("newsHighImpact").textContent = freshCounts.highImpact;
     $news("newsUpdated").textContent = "Feed checked " + safeDate(data.updatedAt);
     $news("newsProvider").textContent = "Source: " + (data.provider || "RSS news feed") +
       " · Showing headlines from the last " + FRESHNESS_HOURS + " hours (" + freshArticles.length + "/" + allArticles.length + ")";
