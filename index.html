@@ -986,9 +986,18 @@ setInterval(()=>{
 <script>
 (() => {
   const $news = id => document.getElementById(id);
+  const FRESHNESS_HOURS = 24;
   const safeDate = value => {
     const date = new Date(value);
     return Number.isNaN(date.getTime()) ? "Time unavailable" : date.toLocaleString();
+  };
+  const validNewsUrl = value => {
+    try {
+      const url = new URL(value);
+      return url.protocol === "https:" || url.protocol === "http:";
+    } catch {
+      return false;
+    }
   };
   function addNewsBadge(parent, text, cls) {
     const badge = document.createElement("span");
@@ -998,48 +1007,77 @@ setInterval(()=>{
   }
   function renderNews(data) {
     const counts = data.counts || {};
+    const allArticles = Array.isArray(data.articles) ? data.articles : [];
+    const now = Date.now();
+    const cutoff = now - FRESHNESS_HOURS * 60 * 60 * 1000;
+    const freshArticles = allArticles.filter(item => {
+      const publishedAt = new Date(item.published).getTime();
+      return Number.isFinite(publishedAt) && publishedAt >= cutoff &&
+        publishedAt <= now + 5 * 60 * 1000 && validNewsUrl(item.link);
+    });
+    const staleCount = allArticles.length - freshArticles.length;
+
     $news("newsOverall").textContent = data.overall || "NEUTRAL";
     $news("newsOverall").className = "metric-value " + String(data.overall || "neutral").toLowerCase();
     $news("newsBullish").textContent = counts.bullish ?? 0;
     $news("newsBearish").textContent = counts.bearish ?? 0;
     $news("newsHighImpact").textContent = data.highImpact ?? 0;
-    $news("newsUpdated").textContent = "Updated " + safeDate(data.updatedAt);
-    $news("newsProvider").textContent = "Source: " + (data.provider || "RSS news feed");
+    $news("newsUpdated").textContent = "Feed checked " + safeDate(data.updatedAt);
+    $news("newsProvider").textContent = "Source: " + (data.provider || "RSS news feed") +
+      " · Showing headlines from the last " + FRESHNESS_HOURS + " hours (" + freshArticles.length + "/" + allArticles.length + ")";
+
     const list = $news("newsList");
     list.replaceChildren();
-    if (!Array.isArray(data.articles) || !data.articles.length) {
+    if (!freshArticles.length) {
       const empty = document.createElement("div");
       empty.className = "empty";
       const strong = document.createElement("strong");
-      strong.textContent = "No headlines available right now";
-      empty.append(strong, document.createTextNode("Try refreshing in a few minutes."));
+      strong.textContent = "No fresh headlines in the last 24 hours";
+      const note = document.createElement("div");
+      note.textContent = staleCount
+        ? staleCount + " older or undated headline(s) were hidden. The feed is responding, but it has not supplied recent articles."
+        : "The news provider returned no recent articles. Try refreshing later.";
+      empty.append(strong, note);
       list.appendChild(empty);
       return;
     }
-    for (const item of data.articles) {
+
+    for (const item of freshArticles) {
       const card = document.createElement("article");
       card.className = "news-item";
       const link = document.createElement("a");
       link.href = item.link;
       link.target = "_blank";
       link.rel = "noopener noreferrer";
-      link.textContent = item.title;
+      link.textContent = item.title || "Untitled headline";
       const meta = document.createElement("div");
       meta.className = "news-meta";
       meta.append(document.createTextNode((item.source || "News source") + " · " + safeDate(item.published) + " · "));
-      addNewsBadge(meta, item.label, String(item.label).toLowerCase());
-      addNewsBadge(meta, item.impact + " IMPACT", "neutral");
+      addNewsBadge(meta, item.label || "NEUTRAL", String(item.label || "neutral").toLowerCase());
+      addNewsBadge(meta, (item.impact || "LOW") + " IMPACT", "neutral");
       card.append(link, meta);
       list.appendChild(card);
     }
+    if (staleCount) {
+      const note = document.createElement("div");
+      note.className = "small";
+      note.textContent = staleCount + " older or undated headline(s) hidden by the 24-hour freshness filter.";
+      list.appendChild(note);
+    }
   }
+
   async function loadNews() {
     const button = $news("newsRefreshBtn");
     if (button) { button.disabled = true; button.textContent = "Loading…"; }
     try {
-      const response = await fetch("/api/news", {headers: {"Accept":"application/json"}, cache:"no-store"});
+      const response = await fetch("/api/news", {
+        headers: {"Accept":"application/json"},
+        cache: "no-store"
+      });
       const data = await response.json();
-      if (!response.ok || data.status !== "ok") throw new Error(data.message || "News service unavailable");
+      if (!response.ok || data.status !== "ok") {
+        throw new Error(data.message || "News service unavailable");
+      }
       renderNews(data);
     } catch (error) {
       const list = $news("newsList");
@@ -1053,15 +1091,22 @@ setInterval(()=>{
       }
       $news("newsOverall").textContent = "OFFLINE";
       $news("newsUpdated").textContent = "Check Cloudflare Pages Functions deployment";
+      $news("newsProvider").textContent = "Source: unavailable";
     } finally {
       if (button) { button.disabled = false; button.textContent = "↻ Refresh news"; }
     }
   }
-  document.addEventListener("DOMContentLoaded", () => {
+
+  function initNews() {
     if ($news("newsRefreshBtn")) $news("newsRefreshBtn").addEventListener("click", loadNews);
     loadNews();
     setInterval(loadNews, 300000);
-  });
+  }
+  if (document.readyState === "loading") {
+    document.addEventListener("DOMContentLoaded", initNews, {once:true});
+  } else {
+    initNews();
+  }
 })();
 </script>
 
