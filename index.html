@@ -1,313 +1,129 @@
-
-<!DOCTYPE html>
+<!doctype html>
 <html lang="en">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>XAUUSD / BTCUSD SMC Scanner</title>
-
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="theme-color" content="#080d18">
+<title>Qorex AI · Market Intelligence</title>
 <style>
-:root {
-  --bg:#080d18;
-  --panel:#111a2b;
-  --panel2:#172238;
-  --border:#26344d;
-  --text:#e8eef8;
-  --muted:#91a0b8;
-  --gold:#f5c451;
-  --green:#22c58b;
-  --red:#ff647c;
-  --blue:#64a5ff;
-}
-* {box-sizing:border-box}
-body {
-  margin:0;
-  padding:20px;
-  background:var(--bg);
-  color:var(--text);
-  font-family:Arial,sans-serif;
-}
-.container {max-width:1400px;margin:auto}
-header {
-  display:flex;
-  justify-content:space-between;
-  align-items:center;
-  flex-wrap:wrap;
-  gap:12px;
-  margin-bottom:20px;
-}
-h1 {font-size:25px;margin:0;color:var(--gold)}
-.subtitle {color:var(--muted);font-size:12px;margin-top:6px}
-.status {font-size:12px;color:var(--green)}
-.grid {
-  display:grid;
-  grid-template-columns:repeat(4,1fr);
-  gap:12px;
-  margin-bottom:15px;
-}
-.panel {
-  background:var(--panel);
-  border:1px solid var(--border);
-  border-radius:12px;
-  padding:16px;
-  margin-bottom:15px;
-  min-width:0;
-}
-.label {
-  color:var(--muted);
-  font-size:11px;
-  letter-spacing:1px;
-  margin-bottom:9px;
-}
-.value {
-  font-size:25px;
-  font-weight:bold;
-}
-.gold {color:var(--gold)}
-.green {color:var(--green)}
-.red {color:var(--red)}
-.small {font-size:12px;color:var(--muted);line-height:1.6}
-.layout {
-  display:grid;
-  grid-template-columns:2fr 1fr;
-  gap:15px;
-}
-button {
-  background:var(--panel2);
-  color:var(--text);
-  border:1px solid var(--border);
-  border-radius:7px;
-  padding:9px 13px;
-  cursor:pointer;
-  margin:3px;
-}
-button:hover,button.active {
-  border-color:var(--gold);
-  color:var(--gold);
-}
-.timeframes {
-  display:flex;
-  flex-wrap:wrap;
-  margin-bottom:10px;
-}
-canvas {
-  width:100%;
-  height:360px;
-  display:block;
-}
-.section-title {
-  font-size:15px;
-  font-weight:bold;
-  margin-bottom:13px;
-}
-.row {
-  display:flex;
-  justify-content:space-between;
-  gap:10px;
-  padding:9px 0;
-  border-bottom:1px solid var(--border);
-  font-size:13px;
-}
-.row:last-child {border-bottom:0}
-.tag {
-  padding:4px 8px;
-  border-radius:5px;
-  font-size:11px;
-  font-weight:bold;
-  background:var(--panel2);
-}
-.buy {color:var(--green)}
-.sell {color:var(--red)}
-.neutral {color:var(--gold)}
-.signal {
-  text-align:center;
-  padding:15px;
-  border-radius:9px;
-  background:var(--panel2);
-  margin-bottom:12px;
-}
-.signal strong {font-size:22px}
-.levels {
-  display:grid;
-  grid-template-columns:repeat(2,1fr);
-  gap:8px;
-}
-.level {
-  background:var(--panel2);
-  padding:12px;
-  border-radius:8px;
-}
-.level .label {margin-bottom:6px}
-.level .value {font-size:17px}
-.footer {
-  text-align:center;
-  color:var(--muted);
-  font-size:11px;
-  margin-top:20px;
-}
-@media(max-width:850px) {
-  .grid {grid-template-columns:repeat(2,1fr)}
-  .layout {grid-template-columns:1fr}
-}
-@media(max-width:450px) {
-  body {padding:10px}
-  .value {font-size:21px}
-  canvas {height:280px}
-}
+:root{color-scheme:dark;--bg:#080d18;--side:#0c1423;--panel:#111c2e;--panel2:#17243a;--line:#263650;--text:#e8eef8;--muted:#91a0b8;--gold:#f5c451;--green:#22c58b;--red:#ff647c;--blue:#64a5ff;--purple:#a78bfa}
+*{box-sizing:border-box}body{margin:0;background:var(--bg);color:var(--text);font:14px/1.5 Inter,ui-sans-serif,system-ui,-apple-system,Segoe UI,Arial,sans-serif}
+button{font:inherit;color:inherit;cursor:pointer}.app{min-height:100vh;display:grid;grid-template-columns:228px minmax(0,1fr)}
+.sidebar{background:var(--side);border-right:1px solid var(--line);padding:22px 14px;display:flex;flex-direction:column;gap:25px}
+.brand{display:flex;align-items:center;gap:10px;padding:0 9px}.brand-mark{width:34px;height:34px;border-radius:10px;background:linear-gradient(135deg,#f5c451,#b77b25);display:grid;place-items:center;color:#111827;font-weight:900;font-size:19px}.brand-name{font-size:16px;font-weight:800;letter-spacing:.08em}.brand-sub{font-size:10px;color:var(--muted);letter-spacing:.16em}
+.nav-label{padding:0 11px;color:#667791;font-size:10px;font-weight:800;letter-spacing:.15em;text-transform:uppercase;margin-bottom:7px}.nav{display:grid;gap:5px}.nav button{display:flex;align-items:center;gap:11px;text-align:left;width:100%;border:1px solid transparent;background:transparent;padding:11px;border-radius:9px;color:#9eacc1;font-size:13px}.nav button:hover,.nav button.active{background:#17243a;border-color:#293b58;color:#fff}.nav button.active .nav-icon{color:var(--gold)}.nav-icon{width:18px;text-align:center;color:#71839e;font-size:16px}.side-bottom{margin-top:auto}.feed-card{border:1px solid var(--line);background:#101b2c;border-radius:11px;padding:12px}.feed-card strong{font-size:12px}.feed-card p{margin:5px 0 0;color:var(--muted);font-size:11px}
+.main{min-width:0;padding:22px 26px 35px}.topbar{display:flex;align-items:center;justify-content:space-between;gap:14px;flex-wrap:wrap;margin-bottom:23px}.eyebrow{font-size:10px;color:var(--muted);letter-spacing:.16em;text-transform:uppercase}.page-title{font-size:22px;font-weight:750;margin:2px 0 0}.top-actions{display:flex;align-items:center;gap:9px;flex-wrap:wrap}.selectlike,.top-btn{background:var(--panel);border:1px solid var(--line);border-radius:8px;padding:8px 11px;color:var(--text);font-size:12px}.live-dot{display:inline-block;width:7px;height:7px;border-radius:50%;background:var(--green);margin-right:7px;box-shadow:0 0 10px #22c58b88}
+.page{display:none}.page.active{display:block}.grid{display:grid;gap:13px}.metrics{grid-template-columns:repeat(4,minmax(0,1fr));margin-bottom:14px}.panel{background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:16px;min-width:0}.metric-label{font-size:10px;color:var(--muted);letter-spacing:.12em;text-transform:uppercase}.metric-value{font-size:24px;font-weight:750;margin-top:6px;letter-spacing:-.03em}.metric-note{font-size:11px;color:var(--muted);margin-top:4px}.gold{color:var(--gold)}.green{color:var(--green)}.red{color:var(--red)}.muted{color:var(--muted)}
+.split{grid-template-columns:minmax(0,1.8fr) minmax(280px,1fr);align-items:start}.stack{display:grid;gap:13px}.panel-head{display:flex;justify-content:space-between;align-items:center;gap:12px;margin-bottom:13px}.panel-title{font-size:13px;font-weight:750;letter-spacing:.02em}.panel-kicker{font-size:10px;color:var(--muted)}
+.pills{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:12px}.pill-btn{background:#111c2e;border:1px solid var(--line);padding:6px 10px;border-radius:7px;font-size:11px;color:#9eacc1}.pill-btn.active,.pill-btn:hover{border-color:#8a6a2c;color:var(--gold);background:#292315}
+canvas{width:100%;height:350px;display:block}.small{font-size:11px;color:var(--muted);line-height:1.6}.row{display:flex;justify-content:space-between;align-items:center;gap:12px;padding:9px 0;border-bottom:1px solid var(--line);font-size:12px}.row:last-child{border-bottom:0}.tag{padding:3px 8px;border-radius:5px;background:var(--panel2);font-size:10px;font-weight:750}.buy{color:var(--green)}.sell{color:var(--red)}.neutral{color:var(--gold)}
+.signal-box{text-align:center;background:linear-gradient(145deg,#17243a,#111a2b);border:1px solid #2a3b57;border-radius:10px;padding:18px;margin-bottom:12px}.signal-box strong{font-size:27px;letter-spacing:.04em}.signal-levels{display:grid;grid-template-columns:repeat(2,1fr);gap:8px}.level{background:var(--panel2);border-radius:8px;padding:10px}.level .metric-value{font-size:16px;margin-top:3px}
+.notice{border:1px solid #5a4824;background:#211d13;color:#e8d7ad;padding:12px;border-radius:9px;font-size:11px;line-height:1.6}.empty{border:1px dashed #33445f;border-radius:10px;padding:25px 16px;text-align:center;color:var(--muted)}.empty-icon{font-size:24px;margin-bottom:7px}.empty strong{display:block;color:var(--text);font-size:13px;margin-bottom:4px}
+.mtf-grid{display:grid;grid-template-columns:repeat(5,1fr);gap:8px}.mtf-item{background:var(--panel2);border-radius:8px;padding:11px;text-align:center}.mtf-item strong{display:block;font-size:13px;margin-top:5px}
+.history-item{display:grid;grid-template-columns:60px 1fr auto;gap:10px;align-items:center;padding:10px 0;border-bottom:1px solid var(--line);font-size:11px}.history-item:last-child{border:0}
+.footer{margin-top:22px;color:#64758e;font-size:10px;text-align:center}
+@media(max-width:1000px){.app{grid-template-columns:70px minmax(0,1fr)}.sidebar{padding:18px 9px}.brand{justify-content:center;padding:0}.brand-copy,.nav-label,.nav-text,.feed-card{display:none}.nav button{justify-content:center;padding:12px 5px}.nav-icon{font-size:18px}.metrics{grid-template-columns:repeat(2,minmax(0,1fr))}}
+@media(max-width:720px){.main{padding:16px 12px 28px}.split{grid-template-columns:1fr}.topbar{margin-bottom:15px}.page-title{font-size:19px}.mtf-grid{grid-template-columns:repeat(3,1fr)}canvas{height:290px}}
+@media(max-width:420px){.metrics{gap:8px}.panel{padding:12px}.metric-value{font-size:20px}.top-actions{width:100%}}
 </style>
 </head>
-
 <body>
-<div class="container">
-
-<header>
-  <div>
-    <h1>SMC MARKET SCANNER</h1>
-    <div class="subtitle">XAUUSD & BTCUSD • Smart Money Concepts • Market Dashboard</div>
-  </div>
-  <div class="status" id="connection">Connecting...</div>
-</header>
-
-<div class="grid">
-  <div class="panel">
-    <div class="label" id="priceLabel">XAUUSD SPOT PRICE</div>
-    <div class="value gold" id="price">Loading...</div>
-    <div class="small" id="priceTime">Waiting for data</div>
-  </div>
-
-  <div class="panel">
-    <div class="label">MARKET BIAS</div>
-    <div class="value" id="marketBias">--</div>
-    <div class="small" id="biasDescription">Waiting for candles</div>
+<div class="app">
+<aside class="sidebar">
+  <div class="brand"><div class="brand-mark">Q</div><div class="brand-copy"><div class="brand-name">QOREX AI</div><div class="brand-sub">MARKET INTELLIGENCE</div></div></div>
+  <div><div class="nav-label">Workspace</div><nav class="nav">
+    <button class="active" data-page="overview"><span class="nav-icon">◫</span><span class="nav-text">Overview</span></button>
+    <button data-page="signals"><span class="nav-icon">⌁</span><span class="nav-text">AI Signals</span></button>
+    <button data-page="news"><span class="nav-icon">▤</span><span class="nav-text">News Sentiment</span></button>
+    <button data-page="track"><span class="nav-icon">◷</span><span class="nav-text">Track Record</span></button>
+    <button data-page="analysis"><span class="nav-icon">⌗</span><span class="nav-text">Market Analysis</span></button>
+  </nav></div>
+  <div class="side-bottom"><div class="feed-card"><strong><span class="live-dot"></span>DATA CONNECTION</strong><p id="sideFeedStatus">Checking existing market feed…</p></div></div>
+</aside>
+<main class="main">
+  <div class="topbar">
+    <div><div class="eyebrow">Trading intelligence terminal</div><h1 class="page-title" id="pageTitle">Market Overview</h1></div>
+    <div class="top-actions"><span class="selectlike"><span class="live-dot"></span><span id="connection">Connecting…</span></span><button class="top-btn" id="refreshBtn">↻ Refresh data</button><span class="selectlike" id="clock">--:--:--</span></div>
   </div>
 
-  <div class="panel">
-    <div class="label">RSI (14)</div>
-    <div class="value" id="rsiValue">--</div>
-    <div class="small" id="rsiDescription">Waiting for data</div>
-  </div>
-
-  <div class="panel">
-    <div class="label">ACTIVE TIMEFRAME</div>
-    <div class="value gold" id="activeTF">M5</div>
-    <div class="small" id="candleCount">No candles loaded</div>
-  </div>
-</div>
-
-<div class="layout">
-
-  <div>
-    <div class="panel">
-      <div class="section-title" id="chartTitle">XAUUSD PRICE CHART</div>
-
-      <div class="timeframes" style="margin-bottom:8px">
-        <button class="active" data-market="xau">GOLD · XAUUSD</button>
-        <button data-market="bitcoin">BITCOIN · BTCUSD</button>
-      </div>
-
-      <div class="timeframes">
-        <button class="active" data-tf="5m">M5</button>
-        <button data-tf="15m">M15</button>
-        <button data-tf="30m">M30</button>
-        <button data-tf="60m">H1</button>
-        <button data-tf="240m">H4</button>
-      </div>
-
-      <canvas id="chart"></canvas>
-      <div class="small" id="chartStatus">Loading chart...</div>
+  <section class="page active" id="page-overview">
+    <div class="grid metrics">
+      <article class="panel"><div class="metric-label" id="priceLabel">XAUUSD SPOT PRICE</div><div class="metric-value gold" id="price">Loading…</div><div class="metric-note" id="priceTime">Waiting for data</div></article>
+      <article class="panel"><div class="metric-label">Market bias</div><div class="metric-value" id="marketBias">--</div><div class="metric-note" id="biasDescription">Waiting for candles</div></article>
+      <article class="panel"><div class="metric-label">RSI · 14</div><div class="metric-value" id="rsiValue">--</div><div class="metric-note" id="rsiDescription">Waiting for data</div></article>
+      <article class="panel"><div class="metric-label">Active timeframe</div><div class="metric-value gold" id="activeTF">M5</div><div class="metric-note" id="candleCount">No candles loaded</div></article>
     </div>
-
-    <div class="panel">
-      <div class="section-title">SMART MONEY CONCEPTS</div>
-
-      <div class="row">
-        <span>Liquidity Sweep</span>
-        <strong id="sweep">--</strong>
+    <div class="grid split">
+      <div class="stack">
+        <article class="panel">
+          <div class="panel-head"><div class="panel-title" id="chartTitle">XAUUSD · PRICE ACTION</div><span class="panel-kicker" id="chartStatus">Loading chart…</span></div>
+          <div class="pills"><button class="pill-btn active" data-market="xau">GOLD · XAUUSD</button><button class="pill-btn" data-market="bitcoin">BITCOIN · BTCUSD</button></div>
+          <div class="pills"><button class="pill-btn active" data-tf="5m">M5</button><button class="pill-btn" data-tf="15m">M15</button><button class="pill-btn" data-tf="30m">M30</button><button class="pill-btn" data-tf="60m">H1</button><button class="pill-btn" data-tf="240m">H4</button></div>
+          <canvas id="chart"></canvas>
+          <div class="small">Candles and price levels are supplied by the currently configured market-data endpoint. Provider prices may differ from your broker.</div>
+        </article>
+        <article class="panel"><div class="panel-head"><div class="panel-title">Smart Money Concepts</div><span class="tag">RULE-BASED SCANNER</span></div>
+          <div class="row"><span>Liquidity sweep</span><strong id="sweep">--</strong></div><div class="row"><span>Fair Value Gap</span><strong id="fvg">--</strong></div><div class="row"><span>Order Block</span><strong id="orderBlock">--</strong></div><div class="row"><span>Break of Structure</span><strong id="bos">--</strong></div><div class="row"><span>Premium / Discount</span><strong id="premium">--</strong></div>
+        </article>
       </div>
-      <div class="row">
-        <span>Fair Value Gap (FVG)</span>
-        <strong id="fvg">--</strong>
-      </div>
-      <div class="row">
-        <span>Order Block</span>
-        <strong id="orderBlock">--</strong>
-      </div>
-      <div class="row">
-        <span>Break of Structure</span>
-        <strong id="bos">--</strong>
-      </div>
-      <div class="row">
-        <span>Premium / Discount</span>
-        <strong id="premium">--</strong>
+      <div class="stack">
+        <article class="panel"><div class="panel-head"><div class="panel-title">Latest signal</div><span class="tag">MACHINE SCAN</span></div>
+          <div class="signal-box"><div class="metric-label">SCANNER RESULT</div><strong id="signal" class="neutral">WAIT</strong><div class="small" id="signalReason">Waiting for market analysis</div></div>
+          <div class="row"><span id="entryLabel">Entry</span><strong id="entry">--</strong></div><div class="row"><span id="slLabel">Stop Loss</span><strong class="red" id="sl">--</strong></div><div class="row"><span id="tp1Label">Take Profit 1</span><strong class="green" id="tp1">--</strong></div><div class="row"><span id="tp2Label">Take Profit 2</span><strong class="green" id="tp2">--</strong></div><div class="row"><span id="tp3Label">Take Profit 3</span><strong class="green" id="tp3">--</strong></div>
+        </article>
+        <article class="panel"><div class="panel-head"><div class="panel-title">Market range</div><span class="panel-kicker">Recent candles</span></div>
+          <div class="row"><span>Recent high</span><strong id="recentHigh">--</strong></div><div class="row"><span>Recent low</span><strong id="recentLow">--</strong></div><div class="row"><span>Average range</span><strong id="avgRange">--</strong></div><div class="row"><span>Last update</span><strong id="lastUpdate">--</strong></div>
+        </article>
+        <article class="notice">Signals are technical rule-based observations, not guaranteed predictions. Verify candle closes, spread, execution and risk before trading.</article>
       </div>
     </div>
+  </section>
 
-    <div class="panel">
-      <div class="section-title">MULTI-TIMEFRAME BIAS</div>
-      <div class="row"><span>M5</span><strong id="mtf5">--</strong></div>
-      <div class="row"><span>M15</span><strong id="mtf15">--</strong></div>
-      <div class="row"><span>M30</span><strong id="mtf30">--</strong></div>
-      <div class="row"><span>H1</span><strong id="mtf60">--</strong></div>
-      <div class="row"><span>H4</span><strong id="mtf240">--</strong></div>
+  <section class="page" id="page-signals">
+    <div class="grid metrics">
+      <article class="panel"><div class="metric-label">Current setup</div><div class="metric-value" id="signalPageState">WAIT</div><div class="metric-note">From existing SMC scanner</div></article>
+      <article class="panel"><div class="metric-label">Entry</div><div class="metric-value gold" id="signalPageEntry">--</div><div class="metric-note">Current candle close</div></article>
+      <article class="panel"><div class="metric-label">Stop loss</div><div class="metric-value red" id="signalPageSL">--</div><div class="metric-note">Structure-based estimate</div></article>
+      <article class="panel"><div class="metric-label">Signal engine</div><div class="metric-value" style="font-size:17px">SMC rules</div><div class="metric-note">External AI service not connected</div></article>
     </div>
-  </div>
-
-  <div>
-    <div class="panel">
-      <div class="section-title">TRADE SIGNAL</div>
-
-      <div class="signal">
-        <div class="label">SCANNER RESULT</div>
-        <strong id="signal" class="neutral">WAIT</strong>
-        <div class="small" id="signalReason">Waiting for market analysis</div>
-      </div>
-
-      <div class="row">
-        <span id="entryLabel">Entry</span>
-        <strong id="entry">--</strong>
-      </div>
-      <div class="row">
-        <span id="slLabel">Stop Loss</span>
-        <strong class="red" id="sl">--</strong>
-      </div>
-      <div class="row">
-        <span id="tp1Label">Take Profit 1</span>
-        <strong class="green" id="tp1">--</strong>
-      </div>
-      <div class="row">
-        <span id="tp2Label">Take Profit 2</span>
-        <strong class="green" id="tp2">--</strong>
-      </div>
-      <div class="row">
-        <span id="tp3Label">Take Profit 3</span>
-        <strong class="green" id="tp3">--</strong>
-      </div>
+    <div class="grid split">
+      <article class="panel"><div class="panel-head"><div class="panel-title">Signal history · current loaded candles</div><span class="tag">DETECTED SETUPS</span></div><div id="historyList" class="small">Waiting for candle history…</div></article>
+      <article class="panel"><div class="panel-title" style="margin-bottom:12px">Signal methodology</div><div class="row"><span>Trend filter</span><strong>SMA 9 / SMA 21</strong></div><div class="row"><span>Structure</span><strong>BOS + liquidity sweep</strong></div><div class="row"><span>Confluence</span><strong>FVG / OB / RSI</strong></div><div class="row"><span>Risk model</span><strong>Structure + 1R / 2R / 3R</strong></div><div class="notice" style="margin-top:13px">This is a transparent rule-based scanner, not a trained AI model. An AI model/API and independent validation are required before describing outputs as AI-generated.</div></article>
     </div>
+  </section>
 
-    <div class="panel">
-      <div class="section-title">MARKET RANGE</div>
-      <div class="row"><span>Recent High</span><strong id="recentHigh">--</strong></div>
-      <div class="row"><span>Recent Low</span><strong id="recentLow">--</strong></div>
-      <div class="row"><span>Average Range</span><strong id="avgRange">--</strong></div>
-      <div class="row"><span>Last Update</span><strong id="lastUpdate">--</strong></div>
+  <section class="page" id="page-news">
+    <div class="grid metrics">
+      <article class="panel"><div class="metric-label">Overall sentiment</div><div class="metric-value">Unavailable</div><div class="metric-note">News provider not connected</div></article>
+      <article class="panel"><div class="metric-label">Bullish headlines</div><div class="metric-value">--</div><div class="metric-note">No verified news feed</div></article>
+      <article class="panel"><div class="metric-label">Bearish headlines</div><div class="metric-value">--</div><div class="metric-note">No verified news feed</div></article>
+      <article class="panel"><div class="metric-label">High-impact events</div><div class="metric-value">--</div><div class="metric-note">Calendar integration pending</div></article>
     </div>
+    <article class="panel"><div class="panel-head"><div class="panel-title">News sentiment monitor</div><span class="tag">INTEGRATION REQUIRED</span></div><div class="empty"><div class="empty-icon">▤</div><strong>News feed is not connected yet</strong>To show real headlines, sentiment scores and high-impact event risk, connect a licensed news/calendar provider. This panel deliberately does not display invented headlines or sentiment.</div><div class="small" style="margin-top:12px">Planned coverage: Federal Reserve, inflation, employment, central-bank statements, geopolitical risk, USD strength and precious-metals news.</div></article>
+  </section>
 
-    <div class="panel">
-      <div class="section-title">RISK DISCLAIMER</div>
-      <div class="small">
-        This scanner uses simplified technical rules to identify
-        possible market conditions. Signals are not guaranteed.
-        Always confirm with your own analysis and manage risk.
-        This is not financial advice.
-      </div>
+  <section class="page" id="page-track">
+    <div class="grid metrics">
+      <article class="panel"><div class="metric-label">Detected setups</div><div class="metric-value" id="trackCount">0</div><div class="metric-note">Within currently loaded candles</div></article>
+      <article class="panel"><div class="metric-label">Verified win rate</div><div class="metric-value">--</div><div class="metric-note">No verified trade outcomes</div></article>
+      <article class="panel"><div class="metric-label">Net R</div><div class="metric-value">--</div><div class="metric-note">Requires outcome tracking</div></article>
+      <article class="panel"><div class="metric-label">Record status</div><div class="metric-value" style="font-size:17px">Not initialized</div><div class="metric-note">No persistent trade database</div></article>
     </div>
-  </div>
-</div>
+    <article class="panel"><div class="panel-head"><div class="panel-title">Detected signal events</div><span class="tag">NOT PERFORMANCE RESULTS</span></div><div id="trackHistory" class="small">Waiting for candle history…</div><div class="notice" style="margin-top:14px">A reliable track record needs each signal timestamp, entry, stop, targets, execution assumptions and subsequent candle outcomes stored in a persistent database. Detected historical patterns are not proof of profitable trades; win rate and profit are intentionally left blank.</div></article>
+  </section>
 
-<div class="footer">
-  XAUUSD / BTCUSD SMC SCANNER • Market data may be delayed or unavailable.
-</div>
-
+  <section class="page" id="page-analysis">
+    <div class="grid metrics">
+      <article class="panel"><div class="metric-label">Market</div><div class="metric-value gold" id="analysisMarket">XAUUSD</div><div class="metric-note">Selected instrument</div></article>
+      <article class="panel"><div class="metric-label">Trend bias</div><div class="metric-value" id="analysisBias">--</div><div class="metric-note">SMA 9 / SMA 21</div></article>
+      <article class="panel"><div class="metric-label">RSI (14)</div><div class="metric-value" id="analysisRSI">--</div><div class="metric-note">Momentum reading</div></article>
+      <article class="panel"><div class="metric-label">Average candle range</div><div class="metric-value" id="analysisRange">--</div><div class="metric-note">Last 14 candles</div></article>
+    </div>
+    <article class="panel"><div class="panel-head"><div class="panel-title">Multi-timeframe market bias</div><span class="tag">LIVE WHEN FEED AVAILABLE</span></div><div class="mtf-grid"><div class="mtf-item"><span class="small">M5</span><strong id="mtf5">--</strong></div><div class="mtf-item"><span class="small">M15</span><strong id="mtf15">--</strong></div><div class="mtf-item"><span class="small">M30</span><strong id="mtf30">--</strong></div><div class="mtf-item"><span class="small">H1</span><strong id="mtf60">--</strong></div><div class="mtf-item"><span class="small">H4</span><strong id="mtf240">--</strong></div></div></article>
+    <div class="grid split" style="margin-top:13px"><article class="panel"><div class="panel-title" style="margin-bottom:10px">Structure & liquidity</div><div class="row"><span>Liquidity sweep</span><strong id="analysisSweep">--</strong></div><div class="row"><span>Fair Value Gap</span><strong id="analysisFVG">--</strong></div><div class="row"><span>Order Block</span><strong id="analysisOB">--</strong></div><div class="row"><span>Break of Structure</span><strong id="analysisBOS">--</strong></div><div class="row"><span>Premium / Discount</span><strong id="analysisZone">--</strong></div></article><article class="panel"><div class="panel-title" style="margin-bottom:10px">Recent dealing range</div><div class="row"><span>Recent high</span><strong id="analysisHigh">--</strong></div><div class="row"><span>Recent low</span><strong id="analysisLow">--</strong></div><div class="row"><span>Last update</span><strong id="analysisUpdated">--</strong></div></article></div>
+  </section>
+  <div class="footer">QOREX AI · Market intelligence workspace · Informational only, not financial advice.</div>
+</main>
 </div>
 
 <script>
@@ -1090,6 +906,66 @@ setInterval(loadSpot,60000);
 setInterval(()=>{
   loadChart(currentTF);
 },300000);
+</script>
+<script>
+(() => {
+  const titles={overview:"Market Overview",signals:"AI Signals",news:"News Sentiment",track:"Track Record",analysis:"Market Analysis"};
+  document.querySelectorAll("[data-page]").forEach(button=>{
+    button.addEventListener("click",()=>{
+      const name=button.dataset.page;
+      document.querySelectorAll("[data-page]").forEach(b=>b.classList.toggle("active",b===button));
+      document.querySelectorAll(".page").forEach(p=>p.classList.toggle("active",p.id==="page-"+name));
+      document.getElementById("pageTitle").textContent=titles[name]||"Market Overview";
+      renderExtraPanels();
+    });
+  });
+  document.getElementById("refreshBtn").addEventListener("click",()=>{
+    if(typeof loadSpot==="function") loadSpot();
+    if(typeof loadChart==="function") loadChart(currentTF);
+  });
+  function renderHistory(targetId){
+    const target=document.getElementById(targetId);
+    if(!target) return;
+    const items=Array.isArray(window.historicalSignals)?window.historicalSignals:[];
+    if(!items.length){target.innerHTML='<div class="empty"><strong>No detected setups in the loaded candle window</strong>Signals will appear here when the market feed returns enough candles and the scanner finds a setup.</div>';return;}
+    target.innerHTML=items.slice().reverse().map(item=>{
+      const side=item.type==="BUY"?"buy":"sell";
+      const when=new Date(item.time).toLocaleString();
+      return '<div class="history-item"><strong class="'+side+'">'+item.type+'</strong><span>'+when+'</span><strong>'+Number(item.price).toFixed(2)+'</strong></div>';
+    }).join("");
+  }
+  function renderExtraPanels(){
+    const put=(id,value)=>{const el=document.getElementById(id);if(el)el.textContent=value??"--";};
+    put("signalPageState",document.getElementById("signal")?.textContent||"WAIT");
+    put("signalPageEntry",document.getElementById("entry")?.textContent||"--");
+    put("signalPageSL",document.getElementById("sl")?.textContent||"--");
+    put("analysisMarket",currentMarket==="bitcoin"?"BTCUSD":"XAUUSD");
+    put("analysisBias",document.getElementById("marketBias")?.textContent||"--");
+    put("analysisRSI",document.getElementById("rsiValue")?.textContent||"--");
+    put("analysisRange",document.getElementById("avgRange")?.textContent||"--");
+    put("analysisSweep",document.getElementById("sweep")?.textContent||"--");
+    put("analysisFVG",document.getElementById("fvg")?.textContent||"--");
+    put("analysisOB",document.getElementById("orderBlock")?.textContent||"--");
+    put("analysisBOS",document.getElementById("bos")?.textContent||"--");
+    put("analysisZone",document.getElementById("premium")?.textContent||"--");
+    put("analysisHigh",document.getElementById("recentHigh")?.textContent||"--");
+    put("analysisLow",document.getElementById("recentLow")?.textContent||"--");
+    put("analysisUpdated",document.getElementById("lastUpdate")?.textContent||"--");
+    const count=Array.isArray(window.historicalSignals)?window.historicalSignals.length:0;
+    put("trackCount",String(count));
+    renderHistory("historyList");renderHistory("trackHistory");
+    const status=document.getElementById("connection")?.textContent||"Checking feed";
+    put("sideFeedStatus",status);
+  }
+  function tick(){
+    const el=document.getElementById("clock");
+    if(el)el.textContent=new Intl.DateTimeFormat("en-GB",{timeZone:"Asia/Phnom_Penh",hour:"2-digit",minute:"2-digit",second:"2-digit"}).format(new Date())+" · PNH";
+    renderExtraPanels();
+  }
+  tick();setInterval(tick,3000);
+  const statusNode=document.getElementById("connection");
+  if(statusNode)new MutationObserver(renderExtraPanels).observe(statusNode,{childList:true,characterData:true,subtree:true});
+})();
 </script>
 </body>
 </html>
