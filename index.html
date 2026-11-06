@@ -926,7 +926,7 @@ setInterval(()=>{
   function renderHistory(targetId){
     const target=document.getElementById(targetId);
     if(!target) return;
-    const items=Array.isArray(window.historicalSignals)?window.historicalSignals:[];
+    const items=typeof historicalSignals!=="undefined"&&Array.isArray(historicalSignals)?historicalSignals:[];
     if(!items.length){target.innerHTML='<div class="empty"><strong>No detected setups in the loaded candle window</strong>Signals will appear here when the market feed returns enough candles and the scanner finds a setup.</div>';return;}
     target.innerHTML=items.slice().reverse().map(item=>{
       const side=item.type==="BUY"?"buy":"sell";
@@ -951,7 +951,7 @@ setInterval(()=>{
     put("analysisHigh",document.getElementById("recentHigh")?.textContent||"--");
     put("analysisLow",document.getElementById("recentLow")?.textContent||"--");
     put("analysisUpdated",document.getElementById("lastUpdate")?.textContent||"--");
-    const count=Array.isArray(window.historicalSignals)?window.historicalSignals.length:0;
+    const count=typeof historicalSignals!=="undefined"&&Array.isArray(historicalSignals)?historicalSignals.length:0;
     put("trackCount",String(count));
     renderHistory("historyList");renderHistory("trackHistory");
     const status=document.getElementById("connection")?.textContent||"Checking feed";
