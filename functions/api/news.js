@@ -1,11 +1,11 @@
 function xmlText(xml, tag) {
   const match = xml.match(new RegExp("<" + tag + "(?:\\s[^>]*)?>([\\s\\S]*?)</" + tag + ">", "i"));
   if (!match) return "";
-  return match[1].replace(/<!\\[CDATA\\[([\\s\\S]*?)\\]\\]>/g, "$1")
+  return match[1].replace(/<!\[CDATA\[([\s\S]*?)\]\]>/g, "$1")
     .replace(/<[^>]+>/g, "")
     .replace(/&amp;/g, "&").replace(/&quot;/g, '"')
     .replace(/&#39;|&apos;/g, "'").replace(/&lt;/g, "<")
-    .replace(/&gt;/g, ">").replace(/&#(\\d+);/g, (_, n) => String.fromCharCode(Number(n)))
+    .replace(/&gt;/g, ">").replace(/&#(\d+);/g, (_, n) => String.fromCharCode(Number(n)))
     .trim();
 }
 
@@ -23,7 +23,7 @@ function scoreHeadline(title) {
 }
 
 function parseFeed(xml, provider) {
-  const matches = [...xml.matchAll(/<item(?:\\s[^>]*)?>([\\s\\S]*?)<\\/item>/gi)].slice(0, 20);
+  const matches = [...xml.matchAll(/<item(?:\s[^>]*)?>([\s\S]*?)<\/item>/gi)].slice(0, 20);
   return matches.map(match => {
     const item = match[1];
     const title = xmlText(item, "title");
@@ -31,7 +31,7 @@ function parseFeed(xml, provider) {
     const published = xmlText(item, "pubDate") || xmlText(item, "published");
     const source = xmlText(item, "source") || provider;
     return {title, link, published, source, ...scoreHeadline(title)};
-  }).filter(article => article.title && /^https?:\\/\\//i.test(article.link));
+  }).filter(article => article.title && /^https?:\/\//i.test(article.link));
 }
 
 export async function onRequestGet() {
