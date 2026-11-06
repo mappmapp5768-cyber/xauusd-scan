@@ -25,6 +25,17 @@ canvas{width:100%;height:350px;display:block}.small{font-size:11px;color:var(--m
 @media(max-width:1000px){.app{grid-template-columns:70px minmax(0,1fr)}.sidebar{padding:18px 9px}.brand{justify-content:center;padding:0}.brand-copy,.nav-label,.nav-text,.feed-card{display:none}.nav button{justify-content:center;padding:12px 5px}.nav-icon{font-size:18px}.metrics{grid-template-columns:repeat(2,minmax(0,1fr))}}
 @media(max-width:720px){.main{padding:16px 12px 28px}.split{grid-template-columns:1fr}.topbar{margin-bottom:15px}.page-title{font-size:19px}.mtf-grid{grid-template-columns:repeat(3,1fr)}canvas{height:290px}}
 @media(max-width:420px){.metrics{gap:8px}.panel{padding:12px}.metric-value{font-size:20px}.top-actions{width:100%}}
+
+.news-list{display:grid;gap:10px;margin-top:14px}
+.news-item{border:1px solid var(--line);background:#0e1828;border-radius:9px;padding:13px}
+.news-item a{color:var(--text);text-decoration:none;font-weight:650;font-size:12px;line-height:1.5}
+.news-item a:hover{color:var(--gold)}
+.news-meta{display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin-top:8px;color:var(--muted);font-size:10px}
+.news-badge{font-size:9px;font-weight:800;padding:3px 7px;border-radius:5px;background:var(--panel2)}
+.news-badge.bullish{color:var(--green)}.news-badge.bearish{color:var(--red)}.news-badge.neutral{color:var(--gold)}
+.news-toolbar{display:flex;align-items:center;gap:10px;flex-wrap:wrap}
+.news-toolbar button{background:var(--panel2);border:1px solid var(--line);border-radius:7px;padding:7px 10px;font-size:11px}
+
 </style>
 </head>
 <body>
@@ -92,14 +103,18 @@ canvas{width:100%;height:350px;display:block}.small{font-size:11px;color:var(--m
     </div>
   </section>
 
-  <section class="page" id="page-news">
+<section class="page" id="page-news">
     <div class="grid metrics">
-      <article class="panel"><div class="metric-label">Overall sentiment</div><div class="metric-value">Unavailable</div><div class="metric-note">News provider not connected</div></article>
-      <article class="panel"><div class="metric-label">Bullish headlines</div><div class="metric-value">--</div><div class="metric-note">No verified news feed</div></article>
-      <article class="panel"><div class="metric-label">Bearish headlines</div><div class="metric-value">--</div><div class="metric-note">No verified news feed</div></article>
-      <article class="panel"><div class="metric-label">High-impact events</div><div class="metric-value">--</div><div class="metric-note">Calendar integration pending</div></article>
+      <article class="panel"><div class="metric-label">Overall sentiment</div><div class="metric-value neutral" id="newsOverall">Loading…</div><div class="metric-note" id="newsUpdated">Connecting to news feed</div></article>
+      <article class="panel"><div class="metric-label">Bullish headlines</div><div class="metric-value green" id="newsBullish">--</div><div class="metric-note">Headline keyword score</div></article>
+      <article class="panel"><div class="metric-label">Bearish headlines</div><div class="metric-value red" id="newsBearish">--</div><div class="metric-note">Headline keyword score</div></article>
+      <article class="panel"><div class="metric-label">High-impact topics</div><div class="metric-value gold" id="newsHighImpact">--</div><div class="metric-note">Macro / geopolitical keywords</div></article>
     </div>
-    <article class="panel"><div class="panel-head"><div class="panel-title">News sentiment monitor</div><span class="tag">INTEGRATION REQUIRED</span></div><div class="empty"><div class="empty-icon">▤</div><strong>News feed is not connected yet</strong>To show real headlines, sentiment scores and high-impact event risk, connect a licensed news/calendar provider. This panel deliberately does not display invented headlines or sentiment.</div><div class="small" style="margin-top:12px">Planned coverage: Federal Reserve, inflation, employment, central-bank statements, geopolitical risk, USD strength and precious-metals news.</div></article>
+    <article class="panel">
+      <div class="panel-head"><div><div class="panel-title">Latest Gold & Macro News</div><div class="small" id="newsProvider">Source: Google News RSS</div></div><div class="news-toolbar"><button id="newsRefreshBtn">↻ Refresh news</button></div></div>
+      <div id="newsList" class="news-list"><div class="empty"><strong>Loading latest headlines…</strong>Fetching news from the RSS feed.</div></div>
+      <div class="notice" style="margin-top:14px">Sentiment is a simple keyword-based estimate from headlines, not a verified AI prediction or trading signal. Headlines may be delayed, duplicated, or lack context. Open the original source before making decisions.</div>
+    </article>
   </section>
 
   <section class="page" id="page-track">
@@ -967,5 +982,88 @@ setInterval(()=>{
   if(statusNode)new MutationObserver(renderExtraPanels).observe(statusNode,{childList:true,characterData:true,subtree:true});
 })();
 </script>
+
+<script>
+(() => {
+  const $news = id => document.getElementById(id);
+  const safeDate = value => {
+    const date = new Date(value);
+    return Number.isNaN(date.getTime()) ? "Time unavailable" : date.toLocaleString();
+  };
+  function addNewsBadge(parent, text, cls) {
+    const badge = document.createElement("span");
+    badge.className = "news-badge " + cls;
+    badge.textContent = text;
+    parent.appendChild(badge);
+  }
+  function renderNews(data) {
+    const counts = data.counts || {};
+    $news("newsOverall").textContent = data.overall || "NEUTRAL";
+    $news("newsOverall").className = "metric-value " + String(data.overall || "neutral").toLowerCase();
+    $news("newsBullish").textContent = counts.bullish ?? 0;
+    $news("newsBearish").textContent = counts.bearish ?? 0;
+    $news("newsHighImpact").textContent = data.highImpact ?? 0;
+    $news("newsUpdated").textContent = "Updated " + safeDate(data.updatedAt);
+    $news("newsProvider").textContent = "Source: " + (data.provider || "RSS news feed");
+    const list = $news("newsList");
+    list.replaceChildren();
+    if (!Array.isArray(data.articles) || !data.articles.length) {
+      const empty = document.createElement("div");
+      empty.className = "empty";
+      const strong = document.createElement("strong");
+      strong.textContent = "No headlines available right now";
+      empty.append(strong, document.createTextNode("Try refreshing in a few minutes."));
+      list.appendChild(empty);
+      return;
+    }
+    for (const item of data.articles) {
+      const card = document.createElement("article");
+      card.className = "news-item";
+      const link = document.createElement("a");
+      link.href = item.link;
+      link.target = "_blank";
+      link.rel = "noopener noreferrer";
+      link.textContent = item.title;
+      const meta = document.createElement("div");
+      meta.className = "news-meta";
+      meta.append(document.createTextNode((item.source || "News source") + " · " + safeDate(item.published) + " · "));
+      addNewsBadge(meta, item.label, String(item.label).toLowerCase());
+      addNewsBadge(meta, item.impact + " IMPACT", "neutral");
+      card.append(link, meta);
+      list.appendChild(card);
+    }
+  }
+  async function loadNews() {
+    const button = $news("newsRefreshBtn");
+    if (button) { button.disabled = true; button.textContent = "Loading…"; }
+    try {
+      const response = await fetch("/api/news", {headers: {"Accept":"application/json"}, cache:"no-store"});
+      const data = await response.json();
+      if (!response.ok || data.status !== "ok") throw new Error(data.message || "News service unavailable");
+      renderNews(data);
+    } catch (error) {
+      const list = $news("newsList");
+      if (list) {
+        const empty = document.createElement("div");
+        empty.className = "empty";
+        const strong = document.createElement("strong");
+        strong.textContent = "News feed could not be loaded";
+        empty.append(strong, document.createTextNode(" " + (error.message || "Please try again later.")));
+        list.replaceChildren(empty);
+      }
+      $news("newsOverall").textContent = "OFFLINE";
+      $news("newsUpdated").textContent = "Check Cloudflare Pages Functions deployment";
+    } finally {
+      if (button) { button.disabled = false; button.textContent = "↻ Refresh news"; }
+    }
+  }
+  document.addEventListener("DOMContentLoaded", () => {
+    if ($news("newsRefreshBtn")) $news("newsRefreshBtn").addEventListener("click", loadNews);
+    loadNews();
+    setInterval(loadNews, 300000);
+  });
+})();
+</script>
+
 </body>
 </html>
