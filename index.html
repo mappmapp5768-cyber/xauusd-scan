@@ -443,8 +443,8 @@ function scanHistoricalSignals(data) {
     if (current.c < current.o) sellScore++;
 
     let type = null;
-    if (buyScore >= 4 && (bullishStructure || bullishSweep) && buyScore >= sellScore + 2) type = "BUY";
-    else if (sellScore >= 4 && (bearishStructure || bearishSweep) && sellScore >= buyScore + 2) type = "SELL";
+    if (buyScore >= 5 && (bullishStructure || bullishSweep) && buyScore >= sellScore + 2) type = "BUY";
+    else if (sellScore >= 5 && (bearishStructure || bearishSweep) && sellScore >= buyScore + 2) type = "SELL";
 
     if (type) {
       const lastFound = found[found.length - 1];
