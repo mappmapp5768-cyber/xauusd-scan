@@ -71,7 +71,7 @@ canvas{width:100%;height:350px;display:block}.small{font-size:11px;color:var(--m
           <div class="pills"><button class="pill-btn active" data-market="xau">GOLD · XAUUSD</button><button class="pill-btn" data-market="bitcoin">BITCOIN · BTCUSD</button></div>
           <div class="pills"><button class="pill-btn active" data-tf="5m">M5</button><button class="pill-btn" data-tf="15m">M15</button><button class="pill-btn" data-tf="30m">M30</button><button class="pill-btn" data-tf="60m">H1</button><button class="pill-btn" data-tf="240m">H4</button></div>
           <canvas id="chart"></canvas>
-          <div class="small">Candles and price levels are supplied by the currently configured market-data endpoint. Provider prices may differ from your broker.</div>
+          <div class="small">Signals use completed candles only. A candle is ignored until its timeframe closes; possible liquidity sweeps are watch-only. Provider prices may differ from your broker.</div>
         </article>
         <article class="panel"><div class="panel-head"><div class="panel-title">Smart Money Concepts</div><span class="tag">RULE-BASED SCANNER</span></div>
           <div class="row"><span>Liquidity sweep</span><strong id="sweep">--</strong></div><div class="row"><span>Fair Value Gap</span><strong id="fvg">--</strong></div><div class="row"><span>Order Block</span><strong id="orderBlock">--</strong></div><div class="row"><span>Break of Structure</span><strong id="bos">--</strong></div><div class="row"><span>Premium / Discount</span><strong id="premium">--</strong></div>
@@ -99,7 +99,7 @@ canvas{width:100%;height:350px;display:block}.small{font-size:11px;color:var(--m
     </div>
     <div class="grid split">
       <article class="panel"><div class="panel-head"><div class="panel-title">Signal history · current loaded candles</div><span class="tag">DETECTED SETUPS</span></div><div id="historyList" class="small">Waiting for candle history…</div></article>
-      <article class="panel"><div class="panel-title" style="margin-bottom:12px">Signal methodology</div><div class="row"><span>Trend filter</span><strong>SMA 9 / SMA 21</strong></div><div class="row"><span>Structure</span><strong>BOS + liquidity sweep</strong></div><div class="row"><span>Confluence</span><strong>FVG / OB / RSI</strong></div><div class="row"><span>Risk model</span><strong>Structure + 1R / 2R / 3R</strong></div><div class="notice" style="margin-top:13px">This is a transparent rule-based scanner, not a trained AI model. An AI model/API and independent validation are required before describing outputs as AI-generated.</div></article>
+      <article class="panel"><div class="panel-title" style="margin-bottom:12px">Signal methodology</div><div class="row"><span>Trend filter</span><strong>SMA 9 / SMA 21</strong></div><div class="row"><span>Structure</span><strong>BOS + liquidity sweep</strong></div><div class="row"><span>Confluence</span><strong>FVG / OB / RSI</strong></div><div class="row"><span>Risk model</span><strong>Structure + 1R / 2R / 3R</strong></div><div class="notice" style="margin-top:13px">Strict mode: completed candles only, stronger SMC confirmation, and a three-candle reversal lock. WATCH BUY/SELL is not an entry. This remains a rule-based scanner, not a guarantee of profitable trades.</div></article>
     </div>
   </section>
 
@@ -273,6 +273,17 @@ function aggregateH4(source) {
   return Object.values(groups).sort((a,b)=>a.t-b.t);
 }
 
+function candleDurationMs(tf) {
+  return ({"5m":300000,"15m":900000,"30m":1800000,"60m":3600000,"240m":14400000})[tf] || 300000;
+}
+
+// Ignore the still-forming candle so intrabar price movement cannot flip a signal.
+function getClosedCandles(data, tf=currentTF) {
+  const duration = candleDurationMs(tf);
+  const cutoff = Date.now() - 2000;
+  return data.filter(c => c.t + duration <= cutoff);
+}
+
 async function loadChart(tf=currentTF) {
   currentTF = tf;
   const requestId = ++chartRequestId;
@@ -295,8 +306,9 @@ async function loadChart(tf=currentTF) {
     }
 
     if (requestId !== chartRequestId) return;
-    if (!data.length) throw new Error("No candle data");
-    candles = data.slice(-120);
+    const closedData = getClosedCandles(data, tf);
+    if (closedData.length < 25) throw new Error("Not enough completed candles yet");
+    candles = closedData.slice(-120);
 
     setText("candleCount", candles.length + " candles loaded");
     setText("chartStatus", MARKET_CONFIG[marketAtRequest].label + " chart updated successfully");
@@ -404,8 +416,8 @@ function scanHistoricalSignals(data) {
     const priorRangeHigh = Math.max(...highs.slice(-20, -1));
     const priorRangeLow = Math.min(...lows.slice(-20, -1));
     const midpoint = (priorRangeHigh + priorRangeLow) / 2;
-    const bullishSweep = sweep === "SELL-SIDE SWEPT" || sweep === "POSSIBLE LOW SWEEP";
-    const bearishSweep = sweep === "BUY-SIDE SWEPT" || sweep === "POSSIBLE HIGH SWEEP";
+    const bullishSweep = sweep === "SELL-SIDE SWEPT";
+    const bearishSweep = sweep === "BUY-SIDE SWEPT";
     const bullishStructure = bos === "BULLISH BOS";
     const bearishStructure = bos === "BEARISH BOS";
     const bullishRsi = rsi !== null && rsi >= 48 && rsi <= 68;
@@ -436,7 +448,7 @@ function scanHistoricalSignals(data) {
 
     if (type) {
       const lastFound = found[found.length - 1];
-      if (!lastFound || i - lastFound.index >= 5 || lastFound.type !== type) {
+      if (!lastFound || i - lastFound.index >= 5) {
         const isBuy = type === "BUY";
         const direction = isBuy ? 1 : -1;
         const prior = window.slice(-13, -1);
@@ -584,8 +596,8 @@ function analyzeMarket() {
   let buyScore = 0;
   let sellScore = 0;
 
-  const bullishSweep = sweep === "SELL-SIDE SWEPT" || sweep === "POSSIBLE LOW SWEEP";
-  const bearishSweep = sweep === "BUY-SIDE SWEPT" || sweep === "POSSIBLE HIGH SWEEP";
+  const bullishSweep = sweep === "SELL-SIDE SWEPT";
+  const bearishSweep = sweep === "BUY-SIDE SWEPT";
   const bullishStructure = bos === "BULLISH BOS";
   const bearishStructure = bos === "BEARISH BOS";
   const bullishCandle = last.c > last.o;
@@ -623,9 +635,9 @@ function analyzeMarket() {
   let signal = "WAIT";
   let potentialSignal = null;
 
-  if (buyScore >= 4 && bullishTrigger && buyScore >= sellScore + 2) {
+  if (buyScore >= 5 && bullishTrigger && buyScore >= sellScore + 2) {
     signal = "BUY";
-  } else if (sellScore >= 4 && bearishTrigger && sellScore >= buyScore + 2) {
+  } else if (sellScore >= 5 && bearishTrigger && sellScore >= buyScore + 2) {
     signal = "SELL";
   } else if (buyScore >= 2 && buyScore > sellScore &&
              (bias === "BULLISH" || fvg === "BULLISH FVG" || ob === "BULLISH OB")) {
@@ -635,29 +647,45 @@ function analyzeMarket() {
     potentialSignal = "SELL";
   }
 
+  // Hold back an opposite direction for three completed candles to reduce whipsaws.
+  let reversalBlocked = false;
+  if (signal === "BUY" || signal === "SELL") {
+    const lockKey = "qorex_signal_lock_v2_" + currentMarket + "_" + currentTF;
+    try {
+      const previousLock = JSON.parse(localStorage.getItem(lockKey) || "null");
+      if (previousLock && previousLock.type !== signal &&
+          Number.isFinite(previousLock.time) &&
+          last.t - previousLock.time < candleDurationMs(currentTF) * 3) {
+        signal = "WAIT";
+        reversalBlocked = true;
+      } else if (!previousLock || previousLock.type !== signal) {
+        localStorage.setItem(lockKey, JSON.stringify({type:signal,time:last.t}));
+      }
+    } catch (error) {
+      // Storage may be disabled; closed-candle confirmation still applies.
+    }
+  }
+
   historicalSignals = scanHistoricalSignals(candles);
 
+  // Early setups are watch-only; they do not create entry or risk levels.
   chartSignal = signal === "BUY" || signal === "SELL"
     ? {type:signal, potential:false, price:last.c, time:last.t}
-    : potentialSignal
-      ? {type:potentialSignal, potential:true, price:last.c, time:last.t}
-      : null;
+    : null;
 
-  const displaySignal = signal !== "WAIT"
-    ? signal
-    : potentialSignal
-      ? "POTENTIAL " + potentialSignal
-      : "WAIT";
+  const displaySignal = signal;
 
   const signalDetail = signal === "BUY"
-    ? "Bullish SMC setup confirmed • Buy: " + buyScore + " | Sell: " + sellScore
+    ? "Confirmed bullish setup on a completed candle • Buy: " + buyScore + " | Sell: " + sellScore
     : signal === "SELL"
-      ? "Bearish SMC setup confirmed • Sell: " + sellScore + " | Buy: " + buyScore
-      : potentialSignal === "BUY"
-        ? "Early bullish setup — wait for BOS or liquidity sweep • Buy: " + buyScore + " | Sell: " + sellScore
-        : potentialSignal === "SELL"
-          ? "Early bearish setup — wait for BOS or liquidity sweep • Sell: " + sellScore + " | Buy: " + buyScore
-          : "Waiting for setup • Buy: " + buyScore + " | Sell: " + sellScore;
+      ? "Confirmed bearish setup on a completed candle • Sell: " + sellScore + " | Buy: " + buyScore
+      : reversalBlocked
+        ? "Opposite signal blocked by the three-candle reversal filter. Waiting for confirmation."
+        : potentialSignal === "BUY"
+          ? "WATCH BUY only — not an entry. Wait for a confirmed BOS or full liquidity sweep • Buy: " + buyScore + " | Sell: " + sellScore
+          : potentialSignal === "SELL"
+            ? "WATCH SELL only — not an entry. Wait for a confirmed BOS or full liquidity sweep • Sell: " + sellScore + " | Buy: " + buyScore
+            : "WAIT — no confirmed setup on the last completed candle • Buy: " + buyScore + " | Sell: " + sellScore;
 
   updateSignal(displaySignal,last.c,avgRange,buyScore,sellScore,signalDetail,candles,ob,before,sweep);
 }
@@ -674,7 +702,7 @@ async function updateMTF(market=currentMarket) {
     try {
       const data = await getChart(tf,market);
       if (market !== currentMarket) return;
-      updateBiasElement(id,getBias(data));
+      updateBiasElement(id,getBias(getClosedCandles(data,tf)));
     } catch {
       setText(id,"--");
     }
@@ -683,7 +711,7 @@ async function updateMTF(market=currentMarket) {
   try {
     const h1 = await getChart("60m",market);
     if (market !== currentMarket) return;
-    updateBiasElement("mtf240",getBias(aggregateH4(h1)));
+    updateBiasElement("mtf240",getBias(getClosedCandles(aggregateH4(h1),"240m")));
   } catch {
     setText("mtf240","--");
   }
