@@ -295,7 +295,7 @@ async function loadSpot() {
 }
 
 async function getChart(interval, market=currentMarket) {
-  const range = interval === "240m" ? "7d" : "1d";
+  const range = interval === "240m" || interval === "60m" ? "7d" : "1d";
   const symbol = MARKET_CONFIG[market].symbol;
   const url = API + "/chart?symbol=" + symbol + "&range=" + range +
     "&interval=" + interval;
