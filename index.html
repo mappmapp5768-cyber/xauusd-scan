@@ -526,7 +526,7 @@ function scanHistoricalSignals(data) {
         const buffer = Math.max(avgRange*0.15,Math.abs(current.c)*0.00005,0.01);
         let stop = isBuy ? structureStop-buffer : structureStop+buffer;
         let risk = Math.abs(current.c-stop);
-        if (!Number.isFinite(risk) || risk < Math.max(avgRange*0.25,buffer*2)) {
+        if (!Number.isFinite(risk) || (isBuy && stop >= current.c) || (!isBuy && stop <= current.c) || risk < Math.max(avgRange*0.25,buffer*2)) {
           risk = Math.max(avgRange,buffer*2);
           stop = current.c-direction*risk;
         }
@@ -866,7 +866,7 @@ function updateSignal(signal,entry,range,buyScore,sellScore,detail="",sourceCand
   let risk = Math.abs(entry-stop);
 
   // Avoid zero/invalid or implausibly tiny structural risk distances.
-  if (!Number.isFinite(risk) || risk < Math.max(range*0.25,buffer*2)) {
+  if (!Number.isFinite(risk) || (isBuy && stop >= entry) || (!isBuy && stop <= entry) || risk < Math.max(range*0.25,buffer*2)) {
     risk = Math.max(range,buffer*2);
     stop = entry-direction*risk;
   }
