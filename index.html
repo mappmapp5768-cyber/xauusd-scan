@@ -17,7 +17,7 @@ button{font:inherit;color:inherit;cursor:pointer}.app{min-height:100vh;display:g
 .split{grid-template-columns:minmax(0,1.8fr) minmax(280px,1fr);align-items:start}.stack{display:grid;gap:13px}.panel-head{display:flex;justify-content:space-between;align-items:center;gap:12px;margin-bottom:13px}.panel-title{font-size:13px;font-weight:750;letter-spacing:.02em}.panel-kicker{font-size:10px;color:var(--muted)}
 .pills{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:12px}.pill-btn{background:#111c2e;border:1px solid var(--line);padding:6px 10px;border-radius:7px;font-size:11px;color:#9eacc1}.pill-btn.active,.pill-btn:hover{border-color:#8a6a2c;color:var(--gold);background:#292315}
 .tv-chart-wrap{width:100%;height:500px;min-width:0;overflow:hidden;border-radius:9px;background:#080d18}.tv-chart-wrap iframe{border:0}.small{font-size:11px;color:var(--muted);line-height:1.6}.row{display:flex;justify-content:space-between;align-items:center;gap:12px;padding:9px 0;border-bottom:1px solid var(--line);font-size:12px}.row:last-child{border-bottom:0}.tag{padding:3px 8px;border-radius:5px;background:var(--panel2);font-size:10px;font-weight:750}.buy{color:var(--green)}.sell{color:var(--red)}.neutral{color:var(--gold)}
-.signal-box{text-align:center;background:linear-gradient(145deg,#17243a,#111a2b);border:1px solid #2a3b57;border-radius:10px;padding:18px;margin-bottom:12px}.signal-box strong{font-size:27px;letter-spacing:.04em}.signal-levels{display:grid;grid-template-columns:repeat(2,1fr);gap:8px}.level{background:var(--panel2);border-radius:8px;padding:10px}.level .metric-value{font-size:16px;margin-top:3px}
+.signal-box{text-align:center;background:linear-gradient(145deg,#17243a,#111a2b);border:1px solid #2a3b57;border-radius:10px;padding:18px;margin-bottom:12px}.signal-box strong{font-size:27px;letter-spacing:.04em}.wait-detail{margin-top:12px;padding:10px;border:1px solid #344762;border-radius:8px;background:#0d1727;color:#c4d0e2;text-align:left;font-size:11px;line-height:1.65;white-space:pre-line}.wait-detail strong{font-size:11px;letter-spacing:0;color:#f5c451}.signal-levels{display:grid;grid-template-columns:repeat(2,1fr);gap:8px}.level{background:var(--panel2);border-radius:8px;padding:10px}.level .metric-value{font-size:16px;margin-top:3px}
 .notice{border:1px solid #5a4824;background:#211d13;color:#e8d7ad;padding:12px;border-radius:9px;font-size:11px;line-height:1.6}.empty{border:1px dashed #33445f;border-radius:10px;padding:25px 16px;text-align:center;color:var(--muted)}.empty-icon{font-size:24px;margin-bottom:7px}.empty strong{display:block;color:var(--text);font-size:13px;margin-bottom:4px}
 .mtf-grid{display:grid;grid-template-columns:repeat(5,1fr);gap:8px}.mtf-item{background:var(--panel2);border-radius:8px;padding:11px;text-align:center}.mtf-item strong{display:block;font-size:13px;margin-top:5px}
 .history-item{display:grid;grid-template-columns:60px 1fr auto;gap:10px;align-items:center;padding:10px 0;border-bottom:1px solid var(--line);font-size:11px}.history-item:last-child{border:0}
@@ -87,7 +87,7 @@ button{font:inherit;color:inherit;cursor:pointer}.app{min-height:100vh;display:g
       </div>
       <div class="stack">
         <article class="panel"><div class="panel-head"><div class="panel-title">Latest signal</div><span class="tag">MACHINE SCAN</span></div>
-          <div class="signal-box"><div class="metric-label">SCANNER RESULT</div><strong id="signal" class="neutral">WAIT</strong><div class="small" id="signalReason">Waiting for market analysis</div></div><div class="row"><span>Bull confluence score</span><strong class="buy" id="bullScore">0 / 100</strong></div><div class="row"><span>Bear confluence score</span><strong class="sell" id="bearScore">0 / 100</strong></div><div class="row"><span>Higher-timeframe filter</span><strong id="signalHTF">Checking…</strong></div>
+          <div class="signal-box"><div class="metric-label">SCANNER RESULT</div><strong id="signal" class="neutral">WAIT</strong><div class="small" id="signalReason">Waiting for market analysis</div><div class="wait-detail" id="waitReasonDetail" aria-live="polite">Waiting for completed candle analysis…</div></div><div class="row"><span>Bull confluence score</span><strong class="buy" id="bullScore">0 / 100</strong></div><div class="row"><span>Bear confluence score</span><strong class="sell" id="bearScore">0 / 100</strong></div><div class="row"><span>Higher-timeframe filter</span><strong id="signalHTF">Checking…</strong></div>
           <div class="row"><span id="entryLabel">Entry</span><strong id="entry">--</strong></div><div class="row"><span id="slLabel">Stop Loss</span><strong class="red" id="sl">--</strong></div><div class="row"><span id="tp1Label">Take Profit 1</span><strong class="green" id="tp1">--</strong></div><div class="row"><span id="tp2Label">Take Profit 2</span><strong class="green" id="tp2">--</strong></div><div class="row"><span id="tp3Label">Take Profit 3</span><strong class="green" id="tp3">--</strong></div>
         </article>
         <article class="panel"><div class="panel-head"><div class="panel-title">Market range</div><span class="panel-kicker">Recent candles</span></div>
@@ -571,7 +571,7 @@ function scanHistoricalSignals(data) {
 
   return found;
 }
-async function analyzeMarket() {
+async async function analyzeMarket() {
   if (candles.length < 22) {
     setText("marketBias","NEED DATA");
     return;
@@ -768,6 +768,33 @@ async function analyzeMarket() {
     }
   }
 
+  const buyMissing = [];
+  const sellMissing = [];
+  if (bias !== "BULLISH") buyMissing.push(currentTF.toUpperCase() + " trend must be BULLISH");
+  if (!bullishTrigger) buyMissing.push("SMC bullish BOS or sell-side liquidity sweep");
+  if (!ictBullish) buyMissing.push("ICT bullish FVG or Order Block");
+  if (!crtBullish) buyMissing.push("CRT sweep below previous candle low, then close back inside range");
+  if (!bullishHigherConfirmed) buyMissing.push(higherTF + " bullish confirmation");
+  if (buyScore < 8) buyMissing.push("Bull score needs 8+ (currently " + buyScore + ")");
+  if (buyScore < sellScore + 3) buyMissing.push("Bull score must lead Bear by at least 3");
+
+  if (bias !== "BEARISH") sellMissing.push(currentTF.toUpperCase() + " trend must be BEARISH");
+  if (!bearishTrigger) sellMissing.push("SMC bearish BOS or buy-side liquidity sweep");
+  if (!ictBearish) sellMissing.push("ICT bearish FVG or Order Block");
+  if (!crtBearish) sellMissing.push("CRT sweep above previous candle high, then close back inside range");
+  if (!bearishHigherConfirmed) sellMissing.push(higherTF + " bearish confirmation");
+  if (sellScore < 8) sellMissing.push("Bear score needs 8+ (currently " + sellScore + ")");
+  if (sellScore < buyScore + 3) sellMissing.push("Bear score must lead Bull by at least 3");
+
+  const waitReasonDetail = signal === "BUY" || signal === "SELL"
+    ? signal + " confirmed: all PRO entry conditions passed."
+    : reversalBlocked
+      ? "WAIT: opposite direction is temporarily blocked by the three-completed-candle reversal filter.\n" +
+        "BUY checks: " + (buyMissing.join("; ") || "all conditions passed") + "\n" +
+        "SELL checks: " + (sellMissing.join("; ") || "all conditions passed")
+      : "BUY needs: " + (buyMissing.join("; ") || "all conditions passed") + "\n" +
+        "SELL needs: " + (sellMissing.join("; ") || "all conditions passed");
+
   historicalSignals = scanHistoricalSignals(candles);
 
   // Early setups are watch-only; they do not create entry or risk levels.
@@ -818,7 +845,7 @@ async function analyzeMarket() {
               ? "WAIT — higher-timeframe trend is neutral or unavailable. Bull factors: " + (buyFactors.join(" · ") || "none") + " | Bear factors: " + (sellFactors.join(" · ") || "none")
               : "WAIT — PRO requires HTF alignment + SMC trigger + ICT FVG/OB + CRT range reclaim. Bull factors: " + (buyFactors.join(" · ") || "none") + " | Bear factors: " + (sellFactors.join(" · ") || "none");
 
-  updateSignal(displaySignal,last.c,avgRange,buyScore,sellScore,signalDetail,candles,ob,before,sweep);
+  updateSignal(displaySignal,last.c,avgRange,buyScore,sellScore,signalDetail,candles,ob,before,sweep,waitReasonDetail);
 }
 
 async function updateMTF(market=currentMarket) {
@@ -852,12 +879,13 @@ async function updateMTF(market=currentMarket) {
   return result;
 }
 
-function updateSignal(signal,entry,range,buyScore,sellScore,detail="",sourceCandles=[],ob="NONE",previousCandle=null,sweep="NONE") {
+function updateSignal(signal,entry,range,buyScore,sellScore,detail="",sourceCandles=[],ob="NONE",previousCandle=null,sweep="NONE",waitDetail="") {
   const el = $("signal");
   const scoreMax = 16;
   setText("bullScore",Math.min(100,Math.round(buyScore/scoreMax*100)) + " / 100");
   setText("bearScore",Math.min(100,Math.round(sellScore/scoreMax*100)) + " / 100");
   el.textContent = signal;
+  setText("waitReasonDetail",waitDetail || "Waiting for completed candle analysis…");
   el.className = signal.includes("BUY") ? "buy" :
     signal.includes("SELL") ? "sell" : "neutral";
 
@@ -957,6 +985,7 @@ function selectMarket(market) {
   ["sweep","fvg","orderBlock","bos","premium","mtf5","mtf15","mtf30","mtf60","mtf240","entry","sl","tp1","tp2","tp3","recentHigh","recentLow","avgRange","lastUpdate"].forEach(id => setText(id,"--"));
   setText("signal","WAIT");
   setText("signalReason","Waiting for market analysis");
+  setText("waitReasonDetail","Waiting for completed candle analysis…");
   drawChart();
   loadSpot();
   loadChart(currentTF);
