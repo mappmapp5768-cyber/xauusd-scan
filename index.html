@@ -16,14 +16,14 @@ button{font:inherit;color:inherit;cursor:pointer}.app{min-height:100vh;display:g
 .page{display:none}.page.active{display:block}.grid{display:grid;gap:13px}.metrics{grid-template-columns:repeat(4,minmax(0,1fr));margin-bottom:14px}.panel{background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:16px;min-width:0}.metric-label{font-size:10px;color:var(--muted);letter-spacing:.12em;text-transform:uppercase}.metric-value{font-size:24px;font-weight:750;margin-top:6px;letter-spacing:-.03em}.metric-note{font-size:11px;color:var(--muted);margin-top:4px}.gold{color:var(--gold)}.green{color:var(--green)}.red{color:var(--red)}.muted{color:var(--muted)}
 .split{grid-template-columns:minmax(0,1.8fr) minmax(280px,1fr);align-items:start}.stack{display:grid;gap:13px}.panel-head{display:flex;justify-content:space-between;align-items:center;gap:12px;margin-bottom:13px}.panel-title{font-size:13px;font-weight:750;letter-spacing:.02em}.panel-kicker{font-size:10px;color:var(--muted)}
 .pills{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:12px}.pill-btn{background:#111c2e;border:1px solid var(--line);padding:6px 10px;border-radius:7px;font-size:11px;color:#9eacc1}.pill-btn.active,.pill-btn:hover{border-color:#8a6a2c;color:var(--gold);background:#292315}
-canvas{width:100%;height:350px;display:block}.small{font-size:11px;color:var(--muted);line-height:1.6}.row{display:flex;justify-content:space-between;align-items:center;gap:12px;padding:9px 0;border-bottom:1px solid var(--line);font-size:12px}.row:last-child{border-bottom:0}.tag{padding:3px 8px;border-radius:5px;background:var(--panel2);font-size:10px;font-weight:750}.buy{color:var(--green)}.sell{color:var(--red)}.neutral{color:var(--gold)}
+.tv-chart-wrap{width:100%;height:500px;min-width:0;overflow:hidden;border-radius:9px;background:#080d18}.tv-chart-wrap iframe{border:0}.small{font-size:11px;color:var(--muted);line-height:1.6}.row{display:flex;justify-content:space-between;align-items:center;gap:12px;padding:9px 0;border-bottom:1px solid var(--line);font-size:12px}.row:last-child{border-bottom:0}.tag{padding:3px 8px;border-radius:5px;background:var(--panel2);font-size:10px;font-weight:750}.buy{color:var(--green)}.sell{color:var(--red)}.neutral{color:var(--gold)}
 .signal-box{text-align:center;background:linear-gradient(145deg,#17243a,#111a2b);border:1px solid #2a3b57;border-radius:10px;padding:18px;margin-bottom:12px}.signal-box strong{font-size:27px;letter-spacing:.04em}.signal-levels{display:grid;grid-template-columns:repeat(2,1fr);gap:8px}.level{background:var(--panel2);border-radius:8px;padding:10px}.level .metric-value{font-size:16px;margin-top:3px}
 .notice{border:1px solid #5a4824;background:#211d13;color:#e8d7ad;padding:12px;border-radius:9px;font-size:11px;line-height:1.6}.empty{border:1px dashed #33445f;border-radius:10px;padding:25px 16px;text-align:center;color:var(--muted)}.empty-icon{font-size:24px;margin-bottom:7px}.empty strong{display:block;color:var(--text);font-size:13px;margin-bottom:4px}
 .mtf-grid{display:grid;grid-template-columns:repeat(5,1fr);gap:8px}.mtf-item{background:var(--panel2);border-radius:8px;padding:11px;text-align:center}.mtf-item strong{display:block;font-size:13px;margin-top:5px}
 .history-item{display:grid;grid-template-columns:60px 1fr auto;gap:10px;align-items:center;padding:10px 0;border-bottom:1px solid var(--line);font-size:11px}.history-item:last-child{border:0}
 .footer{margin-top:22px;color:#64758e;font-size:10px;text-align:center}
 @media(max-width:1000px){.app{grid-template-columns:70px minmax(0,1fr)}.sidebar{padding:18px 9px}.brand{justify-content:center;padding:0}.brand-copy,.nav-label,.nav-text,.feed-card{display:none}.nav button{justify-content:center;padding:12px 5px}.nav-icon{font-size:18px}.metrics{grid-template-columns:repeat(2,minmax(0,1fr))}}
-@media(max-width:720px){.main{padding:16px 12px 28px}.split{grid-template-columns:1fr}.topbar{margin-bottom:15px}.page-title{font-size:19px}.mtf-grid{grid-template-columns:repeat(3,1fr)}canvas{height:290px}}
+@media(max-width:720px){.main{padding:16px 12px 28px}.split{grid-template-columns:1fr}.topbar{margin-bottom:15px}.page-title{font-size:19px}.mtf-grid{grid-template-columns:repeat(3,1fr)}.tv-chart-wrap{height:390px}}
 @media(max-width:420px){.metrics{gap:8px}.panel{padding:12px}.metric-value{font-size:20px}.top-actions{width:100%}}
 
 .news-list{display:grid;gap:10px;margin-top:14px}
@@ -70,7 +70,7 @@ canvas{width:100%;height:350px;display:block}.small{font-size:11px;color:var(--m
           <div class="panel-head"><div class="panel-title" id="chartTitle">XAUUSD · PRICE ACTION</div><span class="panel-kicker" id="chartStatus">Loading chart…</span></div>
           <div class="pills"><button class="pill-btn active" data-market="xau">GOLD · XAUUSD</button><button class="pill-btn" data-market="bitcoin">BITCOIN · BTCUSD</button></div>
           <div class="pills"><button class="pill-btn active" data-tf="5m">M5</button><button class="pill-btn" data-tf="15m">M15</button><button class="pill-btn" data-tf="30m">M30</button><button class="pill-btn" data-tf="60m">H1</button><button class="pill-btn" data-tf="240m">H4</button></div>
-          <canvas id="chart"></canvas>
+          <div class="tv-chart-wrap"><div id="tradingview_chart" style="width:100%;height:100%"></div></div>
           <div class="small">Signals use completed candles only. A candle is ignored until its timeframe closes; possible liquidity sweeps are watch-only. Provider prices may differ from your broker.</div>
         </article>
         <article class="panel"><div class="panel-head"><div class="panel-title">Smart Money Concepts</div><span class="tag">RULE-BASED SCANNER</span></div>
@@ -141,6 +141,7 @@ canvas{width:100%;height:350px;display:block}.small{font-size:11px;color:var(--m
 </main>
 </div>
 
+<script src="https://s3.tradingview.com/tv.js"></script>
 <script>
 const API = "https://xaus.com/api/v1";
 
@@ -156,6 +157,66 @@ const MARKET_CONFIG = {
   xau: {symbol:"xau", label:"XAUUSD", priceLabel:"XAUUSD SPOT PRICE", chartTitle:"XAUUSD PRICE CHART"},
   bitcoin: {symbol:"bitcoin", label:"BTCUSD", priceLabel:"BTCUSD PRICE", chartTitle:"BTCUSD PRICE CHART"}
 };
+
+let tvWidgetInstance = null;
+let tvCurrentSymbol = "";
+let tvCurrentInterval = "";
+
+const TRADINGVIEW_INTERVALS = {
+  "5m":"5",
+  "15m":"15",
+  "30m":"30",
+  "60m":"60",
+  "240m":"240"
+};
+
+function renderTradingView() {
+  const container = $("tradingview_chart");
+  if (!container) return;
+
+  if (!window.TradingView || typeof window.TradingView.widget !== "function") {
+    setText("chartStatus", "TradingView library is unavailable. Check your connection.");
+    return;
+  }
+
+  const symbol = currentMarket === "bitcoin" ? "COINBASE:BTCUSD" : "OANDA:XAUUSD";
+  const interval = TRADINGVIEW_INTERVALS[currentTF] || "5";
+
+  // Keep the existing widget during routine scanner refreshes.
+  if (tvWidgetInstance && tvCurrentSymbol === symbol && tvCurrentInterval === interval) {
+    return;
+  }
+
+  container.innerHTML = "";
+  tvCurrentSymbol = symbol;
+  tvCurrentInterval = interval;
+
+  try {
+    tvWidgetInstance = new window.TradingView.widget({
+      autosize: true,
+      symbol,
+      interval,
+      timezone: "Asia/Phnom_Penh",
+      theme: "dark",
+      style: "1",
+      locale: "en",
+      enable_publishing: false,
+      allow_symbol_change: false,
+      hide_side_toolbar: false,
+      withdateranges: true,
+      details: true,
+      calendar: false,
+      studies: ["RSI@tv-basicstudies"],
+      container_id: "tradingview_chart"
+    });
+  } catch (error) {
+    tvWidgetInstance = null;
+    tvCurrentSymbol = "";
+    tvCurrentInterval = "";
+    setText("chartStatus", "TradingView chart failed to start.");
+    console.error("TradingView widget error:", error);
+  }
+}
 
 const $ = id => document.getElementById(id);
 
@@ -286,6 +347,7 @@ function getClosedCandles(data, tf=currentTF) {
 
 async function loadChart(tf=currentTF) {
   currentTF = tf;
+  renderTradingView();
   const requestId = ++chartRequestId;
   const marketAtRequest = currentMarket;
   setText("activeTF", tf === "240m" ? "H4" : tf.toUpperCase());
@@ -786,156 +848,8 @@ function updateSignal(signal,entry,range,buyScore,sellScore,detail="",sourceCand
 }
 
 function drawChart() {
-  const canvas = $("chart");
-  const rect = canvas.getBoundingClientRect();
-  const width = Math.max(300,rect.width);
-  const height = Math.max(240,rect.height);
-
-  const dpr = window.devicePixelRatio || 1;
-  canvas.width = width*dpr;
-  canvas.height = height*dpr;
-
-  const ctx = canvas.getContext("2d");
-  ctx.scale(dpr,dpr);
-  ctx.clearRect(0,0,width,height);
-
-  if (!candles.length) return;
-
-  const pad = {left:10,right:65,top:15,bottom:25};
-  const chartW = width-pad.left-pad.right;
-  const chartH = height-pad.top-pad.bottom;
-
-  const highs = candles.map(c=>c.h);
-  const lows = candles.map(c=>c.l);
-
-  const max = Math.max(...highs);
-  const min = Math.min(...lows);
-  const range = max-min || 1;
-
-  const y = price => pad.top+(max-price)/range*chartH;
-
-  // Grid
-  ctx.strokeStyle = "#26344d";
-  ctx.lineWidth=1;
-
-  for (let i=0;i<=5;i++) {
-    const yy=pad.top+(chartH/5)*i;
-    ctx.beginPath();
-    ctx.moveTo(pad.left,yy);
-    ctx.lineTo(width-pad.right,yy);
-    ctx.stroke();
-
-    const value=max-(range/5)*i;
-    ctx.fillStyle="#91a0b8";
-    ctx.font="10px Arial";
-    ctx.fillText(value.toFixed(2),width-pad.right+6,yy+3);
-  }
-
-  const slot=chartW/candles.length;
-  const candleWidth=Math.max(2,Math.min(10,slot*0.65));
-
-  candles.forEach((c,i)=>{
-    const x=pad.left+i*slot+slot/2;
-    const color=c.c>=c.o ? "#22c58b" : "#ff647c";
-
-    ctx.strokeStyle=color;
-    ctx.fillStyle=color;
-    ctx.lineWidth=1;
-
-    ctx.beginPath();
-    ctx.moveTo(x,y(c.h));
-    ctx.lineTo(x,y(c.l));
-    ctx.stroke();
-
-    const top=y(Math.max(c.o,c.c));
-    const bottom=y(Math.min(c.o,c.c));
-    const bodyHeight=Math.max(1,bottom-top);
-
-    ctx.fillRect(
-      x-candleWidth/2,
-      top,
-      candleWidth,
-      bodyHeight
-    );
-  });
-
-  // Current spot price
-  if (spotPrice && spotPrice>=min && spotPrice<=max) {
-    const yy=y(spotPrice);
-    ctx.strokeStyle="#f5c451";
-    ctx.setLineDash([5,4]);
-    ctx.beginPath();
-    ctx.moveTo(pad.left,yy);
-    ctx.lineTo(width-pad.right,yy);
-    ctx.stroke();
-    ctx.setLineDash([]);
-  }
-
-  // Historical confirmed BUY/SELL markers
-  const markers = historicalSignals.map(item => ({
-    index:item.index, type:item.type, potential:false, historical:true
-  }));
-
-  // Add the current candle signal if it is not already represented.
-  if (chartSignal && candles.length) {
-    const currentIndex = candles.findIndex(c => c.t === chartSignal.time);
-    if (currentIndex >= 0) {
-      markers.push({
-        index:currentIndex,
-        type:chartSignal.type,
-        potential:!!chartSignal.potential,
-        historical:false
-      });
-    }
-  }
-
-  markers.forEach(marker => {
-    const candle = candles[marker.index];
-    if (!candle) return;
-    const x = pad.left + marker.index*slot + slot/2;
-    const isBuy = marker.type === "BUY";
-    const color = isBuy
-      ? (marker.potential ? "#8bd9b8" : "#22c58b")
-      : (marker.potential ? "#ffb0bd" : "#ff647c");
-    const tipY = isBuy
-      ? Math.min(height-pad.bottom-10, y(candle.l)+22)
-      : Math.max(pad.top+10, y(candle.h)-22);
-    const baseY = isBuy ? tipY+13 : tipY-13;
-
-    ctx.fillStyle = color;
-    ctx.beginPath();
-    ctx.moveTo(x, tipY);
-    ctx.lineTo(x-7, baseY);
-    ctx.lineTo(x+7, baseY);
-    ctx.closePath();
-    ctx.fill();
-
-    ctx.font = "bold 10px Arial";
-    ctx.textAlign = "center";
-    const label = marker.potential
-      ? (isBuy ? "POT BUY" : "POT SELL")
-      : (isBuy ? "BUY" : "SELL");
-    ctx.fillText(
-      label,
-      x,
-      isBuy ? Math.min(height-pad.bottom-2, baseY+14) : Math.max(pad.top+12, baseY-7)
-    );
-    ctx.textAlign = "left";
-  });
-
-  ctx.fillStyle="#91a0b8";
-  ctx.font="10px Arial";
-
-  [0,Math.floor(candles.length/2),candles.length-1].forEach(i=>{
-    if (candles[i]) {
-      const date=new Date(candles[i].t);
-      const label=date.toLocaleTimeString([],{
-        hour:"2-digit",minute:"2-digit"
-      });
-      const x=pad.left+i*slot;
-      ctx.fillText(label,x,height-7);
-    }
-  });
+  // The TradingView widget renders the chart independently.
+  // Scanner candles and signal calculations remain in the existing data pipeline.
 }
 
 document.querySelectorAll("[data-tf]").forEach(button=>{
@@ -976,7 +890,6 @@ document.querySelectorAll("[data-market]").forEach(button => {
   button.addEventListener("click", () => selectMarket(button.dataset.market));
 });
 
-window.addEventListener("resize",drawChart);
 
 // Initial load
 async function startScanner() {
