@@ -62,14 +62,14 @@ button{font:inherit;color:inherit;cursor:pointer}.app{min-height:100vh;display:g
       <article class="panel"><div class="metric-label" id="priceLabel">XAUUSD SPOT PRICE</div><div class="metric-value gold" id="price">Loading…</div><div class="metric-note" id="priceTime">Waiting for data</div></article>
       <article class="panel"><div class="metric-label">Market bias</div><div class="metric-value" id="marketBias">--</div><div class="metric-note" id="biasDescription">Waiting for candles</div></article>
       <article class="panel"><div class="metric-label">RSI · 14</div><div class="metric-value" id="rsiValue">--</div><div class="metric-note" id="rsiDescription">Waiting for data</div></article>
-      <article class="panel"><div class="metric-label">Active timeframe</div><div class="metric-value gold" id="activeTF">M5</div><div class="metric-note" id="candleCount">No candles loaded</div></article>
+      <article class="panel"><div class="metric-label">Active timeframe</div><div class="metric-value gold" id="activeTF">M15</div><div class="metric-note" id="candleCount">No candles loaded</div></article>
     </div>
     <div class="grid split">
       <div class="stack">
         <article class="panel">
           <div class="panel-head"><div class="panel-title" id="chartTitle">XAUUSD · PRICE ACTION</div><span class="panel-kicker" id="chartStatus">Loading chart…</span></div>
           <div class="pills"><button class="pill-btn active" data-market="xau">GOLD · XAUUSD</button><button class="pill-btn" data-market="bitcoin">BITCOIN · BTCUSD</button></div>
-          <div class="pills"><button class="pill-btn active" data-tf="5m">M5</button><button class="pill-btn" data-tf="15m">M15</button><button class="pill-btn" data-tf="30m">M30</button><button class="pill-btn" data-tf="60m">H1</button><button class="pill-btn" data-tf="240m">H4</button></div>
+          <div class="pills"><button class="pill-btn" data-tf="5m">M5</button><button class="pill-btn active" data-tf="15m">M15</button><button class="pill-btn" data-tf="30m">M30</button><button class="pill-btn" data-tf="60m">H1</button><button class="pill-btn" data-tf="240m">H4</button></div>
           <div class="tv-chart-wrap"><div id="tradingview_chart" style="width:100%;height:100%"></div></div>
           <div class="small">Signals use completed candles only. A candle is ignored until its timeframe closes; possible liquidity sweeps are watch-only. Provider prices may differ from your broker.</div>
         </article>
@@ -79,7 +79,7 @@ button{font:inherit;color:inherit;cursor:pointer}.app{min-height:100vh;display:g
       </div>
       <div class="stack">
         <article class="panel"><div class="panel-head"><div class="panel-title">Latest signal</div><span class="tag">MACHINE SCAN</span></div>
-          <div class="signal-box"><div class="metric-label">SCANNER RESULT</div><strong id="signal" class="neutral">WAIT</strong><div class="small" id="signalReason">Waiting for market analysis</div></div>
+          <div class="signal-box"><div class="metric-label">SCANNER RESULT</div><strong id="signal" class="neutral">WAIT</strong><div class="small" id="signalReason">Waiting for market analysis</div></div><div class="row"><span>Bull confluence score</span><strong class="buy" id="bullScore">0 / 100</strong></div><div class="row"><span>Bear confluence score</span><strong class="sell" id="bearScore">0 / 100</strong></div><div class="row"><span>Higher-timeframe filter</span><strong id="signalHTF">Checking…</strong></div>
           <div class="row"><span id="entryLabel">Entry</span><strong id="entry">--</strong></div><div class="row"><span id="slLabel">Stop Loss</span><strong class="red" id="sl">--</strong></div><div class="row"><span id="tp1Label">Take Profit 1</span><strong class="green" id="tp1">--</strong></div><div class="row"><span id="tp2Label">Take Profit 2</span><strong class="green" id="tp2">--</strong></div><div class="row"><span id="tp3Label">Take Profit 3</span><strong class="green" id="tp3">--</strong></div>
         </article>
         <article class="panel"><div class="panel-head"><div class="panel-title">Market range</div><span class="panel-kicker">Recent candles</span></div>
@@ -147,7 +147,7 @@ const API = "https://xaus.com/api/v1";
 
 let spotPrice = null;
 let candles = [];
-let currentTF = "5m";
+let currentTF = "15m";
 let currentMarket = "xau";
 let chartRequestId = 0;
 let chartSignal = null;
@@ -376,7 +376,7 @@ async function loadChart(tf=currentTF) {
     setText("chartStatus", MARKET_CONFIG[marketAtRequest].label + " chart updated successfully");
 
     drawChart();
-    analyzeMarket();
+    await analyzeMarket();
     drawChart();
     setText("lastUpdate", new Date().toLocaleTimeString());
 
@@ -563,13 +563,13 @@ function scanHistoricalSignals(data) {
 
   return found;
 }
-function analyzeMarket() {
+async function analyzeMarket() {
   if (candles.length < 22) {
     setText("marketBias","NEED DATA");
     return;
   }
 
-  const closes = candles.map(c=>c.c);
+  const analyzedCandles = candles;\n  const analysisMarket = currentMarket;\n  const analysisTF = currentTF;\n  const mtfBias = await updateMTF(analysisMarket);\n  if (analysisMarket !== currentMarket || analysisTF !== currentTF || analyzedCandles !== candles) return;\n\n  const closes = candles.map(c=>c.c);
   const highs = candles.map(c=>c.h);
   const lows = candles.map(c=>c.l);
   const last = candles[candles.length-1];
