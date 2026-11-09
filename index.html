@@ -569,7 +569,13 @@ async function analyzeMarket() {
     return;
   }
 
-  const analyzedCandles = candles;\n  const analysisMarket = currentMarket;\n  const analysisTF = currentTF;\n  const mtfBias = await updateMTF(analysisMarket);\n  if (analysisMarket !== currentMarket || analysisTF !== currentTF || analyzedCandles !== candles) return;\n\n  const closes = candles.map(c=>c.c);
+  const analyzedCandles = candles;
+  const analysisMarket = currentMarket;
+  const analysisTF = currentTF;
+  const mtfBias = await updateMTF(analysisMarket);
+  if (analysisMarket !== currentMarket || analysisTF !== currentTF || analyzedCandles !== candles) return;
+
+  const closes = candles.map(c=>c.c);
   const highs = candles.map(c=>c.h);
   const lows = candles.map(c=>c.l);
   const last = candles[candles.length-1];
