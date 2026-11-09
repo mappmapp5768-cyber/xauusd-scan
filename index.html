@@ -650,8 +650,13 @@ function analyzeMarket() {
     last.c > midpoint ? "PREMIUM" : "DISCOUNT"
   );
 
-  // Multi timeframe data
-  updateMTF(currentMarket);
+  // Multi-timeframe confirmation is required before a trade signal can be confirmed.
+  const higherTF = currentTF === "5m" ? "M15" : currentTF === "15m" ? "H1" : currentTF === "30m" ? "H1" : "H4";
+  const higherBias = currentTF === "5m" ? mtfBias.m15 : currentTF === "15m" ? mtfBias.h1 : currentTF === "30m" ? mtfBias.h1 : mtfBias.h4;
+  const bullishHigherConfirmed = higherBias === "BULLISH";
+  const bearishHigherConfirmed = higherBias === "BEARISH";
+  setText("signalHTF", higherTF + " " + (higherBias || "UNAVAILABLE"));
+  $("signalHTF").className = higherBias === "BULLISH" ? "buy" : higherBias === "BEARISH" ? "sell" : "neutral";
 
   // Smart SMC confluence scoring.
   // Structure break or a liquidity sweep is required as a trade trigger.
@@ -690,6 +695,10 @@ function analyzeMarket() {
 
   if (bullishCandle) buyScore += 1;
   if (bearishCandle) sellScore += 1;
+  if (bullishHigherConfirmed) buyScore += 2;
+  if (bearishHigherConfirmed) sellScore += 2;
+  if (mtfBias.h4 === "BULLISH") buyScore += 1;
+  if (mtfBias.h4 === "BEARISH") sellScore += 1;
 
   const bullishTrigger = bullishStructure || bullishSweep;
   const bearishTrigger = bearishStructure || bearishSweep;
@@ -697,9 +706,9 @@ function analyzeMarket() {
   let signal = "WAIT";
   let potentialSignal = null;
 
-  if (buyScore >= 5 && bullishTrigger && buyScore >= sellScore + 2) {
+  if (buyScore >= 7 && bullishTrigger && bullishHigherConfirmed && buyScore >= sellScore + 3) {
     signal = "BUY";
-  } else if (sellScore >= 5 && bearishTrigger && sellScore >= buyScore + 2) {
+  } else if (sellScore >= 7 && bearishTrigger && bearishHigherConfirmed && sellScore >= buyScore + 3) {
     signal = "SELL";
   } else if (buyScore >= 2 && buyScore > sellScore &&
              (bias === "BULLISH" || fvg === "BULLISH FVG" || ob === "BULLISH OB")) {
@@ -747,24 +756,28 @@ function analyzeMarket() {
           ? "WATCH BUY only — not an entry. Wait for a confirmed BOS or full liquidity sweep • Buy: " + buyScore + " | Sell: " + sellScore
           : potentialSignal === "SELL"
             ? "WATCH SELL only — not an entry. Wait for a confirmed BOS or full liquidity sweep • Sell: " + sellScore + " | Buy: " + buyScore
-            : "WAIT — no confirmed setup on the last completed candle • Buy: " + buyScore + " | Sell: " + sellScore;
+            : !bullishHigherConfirmed && !bearishHigherConfirmed
+      ? "WAIT — higher-timeframe trend is neutral or unavailable. Wait for H1/M15 alignment. • Buy: " + buyScore + " | Sell: " + sellScore
+      : "WAIT — no confirmed setup on the last completed candle • Buy: " + buyScore + " | Sell: " + sellScore;
 
   updateSignal(displaySignal,last.c,avgRange,buyScore,sellScore,signalDetail,candles,ob,before,sweep);
 }
 
 async function updateMTF(market=currentMarket) {
+  const result = {m5:"NEUTRAL",m15:"NEUTRAL",m30:"NEUTRAL",h1:"NEUTRAL",h4:"NEUTRAL"};
   const settings = [
-    ["5m","mtf5"],
-    ["15m","mtf15"],
-    ["30m","mtf30"],
-    ["60m","mtf60"]
+    ["5m","mtf5","m5"],
+    ["15m","mtf15","m15"],
+    ["30m","mtf30","m30"],
+    ["60m","mtf60","h1"]
   ];
 
-  for (const [tf,id] of settings) {
+  for (const [tf,id,key] of settings) {
     try {
       const data = await getChart(tf,market);
-      if (market !== currentMarket) return;
-      updateBiasElement(id,getBias(getClosedCandles(data,tf)));
+      if (market !== currentMarket) return result;
+      result[key] = getBias(getClosedCandles(data,tf));
+      updateBiasElement(id,result[key]);
     } catch {
       setText(id,"--");
     }
@@ -772,15 +785,20 @@ async function updateMTF(market=currentMarket) {
 
   try {
     const h1 = await getChart("60m",market);
-    if (market !== currentMarket) return;
-    updateBiasElement("mtf240",getBias(getClosedCandles(aggregateH4(h1),"240m")));
+    if (market !== currentMarket) return result;
+    result.h4 = getBias(getClosedCandles(aggregateH4(h1),"240m"));
+    updateBiasElement("mtf240",result.h4);
   } catch {
     setText("mtf240","--");
   }
+  return result;
 }
 
 function updateSignal(signal,entry,range,buyScore,sellScore,detail="",sourceCandles=[],ob="NONE",previousCandle=null,sweep="NONE") {
   const el = $("signal");
+  const scoreMax = 13;
+  setText("bullScore",Math.min(100,Math.round(buyScore/scoreMax*100)) + " / 100");
+  setText("bearScore",Math.min(100,Math.round(sellScore/scoreMax*100)) + " / 100");
   el.textContent = signal;
   el.className = signal.includes("BUY") ? "buy" :
     signal.includes("SELL") ? "sell" : "neutral";
