@@ -706,9 +706,9 @@ function analyzeMarket() {
   let signal = "WAIT";
   let potentialSignal = null;
 
-  if (buyScore >= 7 && bullishTrigger && bullishHigherConfirmed && buyScore >= sellScore + 3) {
+  if (buyScore >= 7 && bias === "BULLISH" && bullishTrigger && bullishHigherConfirmed && buyScore >= sellScore + 3) {
     signal = "BUY";
-  } else if (sellScore >= 7 && bearishTrigger && bearishHigherConfirmed && sellScore >= buyScore + 3) {
+  } else if (sellScore >= 7 && bias === "BEARISH" && bearishTrigger && bearishHigherConfirmed && sellScore >= buyScore + 3) {
     signal = "SELL";
   } else if (buyScore >= 2 && buyScore > sellScore &&
              (bias === "BULLISH" || fvg === "BULLISH FVG" || ob === "BULLISH OB")) {
@@ -852,7 +852,7 @@ function updateSignal(signal,entry,range,buyScore,sellScore,detail="",sourceCand
   setText("tp2",fmt(tp2));
   setText("tp3",fmt(tp3));
 
-  setText("entryLabel",isPotential ? "Potential Entry" : "Entry");
+  setText("entryLabel",isPotential ? "Potential Entry" : "Entry (signal candle close)");
   setText("slLabel",isPotential ? "Estimated Structure SL" : "Structure Stop Loss");
   setText("tp1Label",isPotential ? "Estimated TP 1 (1R)" : "Take Profit 1 (1R)");
   setText("tp2Label",isPotential ? "Estimated TP 2 (2R)" : "Take Profit 2 (2R)");
@@ -912,7 +912,7 @@ document.querySelectorAll("[data-market]").forEach(button => {
 // Initial load
 async function startScanner() {
   await loadSpot();
-  await loadChart("5m");
+  await loadChart("15m");
 }
 
 startScanner();
