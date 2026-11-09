@@ -752,19 +752,42 @@ async function analyzeMarket() {
 
   const displaySignal = signal;
 
+  const buyFactors = [];
+  const sellFactors = [];
+  if (bias === "BULLISH") buyFactors.push(currentTF.toUpperCase() + " trend bullish");
+  if (bias === "BEARISH") sellFactors.push(currentTF.toUpperCase() + " trend bearish");
+  if (bullishHigherConfirmed) buyFactors.push(higherTF + " trend aligned");
+  if (bearishHigherConfirmed) sellFactors.push(higherTF + " trend aligned");
+  if (mtfBias.h4 === "BULLISH") buyFactors.push("H4 bullish");
+  if (mtfBias.h4 === "BEARISH") sellFactors.push("H4 bearish");
+  if (bullishStructure) buyFactors.push("bullish BOS");
+  if (bearishStructure) sellFactors.push("bearish BOS");
+  if (bullishSweep) buyFactors.push("sell-side liquidity swept");
+  if (bearishSweep) sellFactors.push("buy-side liquidity swept");
+  if (fvg === "BULLISH FVG") buyFactors.push("bullish FVG");
+  if (fvg === "BEARISH FVG") sellFactors.push("bearish FVG");
+  if (ob === "BULLISH OB") buyFactors.push("bullish order block");
+  if (ob === "BEARISH OB") sellFactors.push("bearish order block");
+  if (last.c < midpoint) buyFactors.push("discount zone");
+  if (last.c > midpoint) sellFactors.push("premium zone");
+  if (bullishRsi) buyFactors.push("RSI momentum supportive");
+  if (bearishRsi) sellFactors.push("RSI momentum supportive");
+  if (bullishCandle) buyFactors.push("bullish candle close");
+  if (bearishCandle) sellFactors.push("bearish candle close");
+
   const signalDetail = signal === "BUY"
-    ? "Confirmed bullish setup on a completed candle • Buy: " + buyScore + " | Sell: " + sellScore
+    ? "BUY confirmed • " + buyFactors.join(" · ") + " • Bull " + buyScore + "/13"
     : signal === "SELL"
-      ? "Confirmed bearish setup on a completed candle • Sell: " + sellScore + " | Buy: " + buyScore
+      ? "SELL confirmed • " + sellFactors.join(" · ") + " • Bear " + sellScore + "/13"
       : reversalBlocked
-        ? "Opposite signal blocked by the three-candle reversal filter. Waiting for confirmation."
+        ? "WAIT — opposite signal blocked by the three-candle reversal filter."
         : potentialSignal === "BUY"
-          ? "WATCH BUY only — not an entry. Wait for a confirmed BOS or full liquidity sweep • Buy: " + buyScore + " | Sell: " + sellScore
+          ? "WATCH BUY only — no entry yet. " + (buyFactors.join(" · ") || "Waiting for bullish confirmation.")
           : potentialSignal === "SELL"
-            ? "WATCH SELL only — not an entry. Wait for a confirmed BOS or full liquidity sweep • Sell: " + sellScore + " | Buy: " + buyScore
+            ? "WATCH SELL only — no entry yet. " + (sellFactors.join(" · ") || "Waiting for bearish confirmation.")
             : !bullishHigherConfirmed && !bearishHigherConfirmed
-      ? "WAIT — higher-timeframe trend is neutral or unavailable. Wait for H1/M15 alignment. • Buy: " + buyScore + " | Sell: " + sellScore
-      : "WAIT — no confirmed setup on the last completed candle • Buy: " + buyScore + " | Sell: " + sellScore;
+              ? "WAIT — higher-timeframe trend is neutral or unavailable. Bull factors: " + (buyFactors.join(" · ") || "none") + " | Bear factors: " + (sellFactors.join(" · ") || "none")
+              : "WAIT — no complete BOS/liquidity setup. Bull factors: " + (buyFactors.join(" · ") || "none") + " | Bear factors: " + (sellFactors.join(" · ") || "none");
 
   updateSignal(displaySignal,last.c,avgRange,buyScore,sellScore,signalDetail,candles,ob,before,sweep);
 }
