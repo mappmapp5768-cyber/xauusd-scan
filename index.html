@@ -571,7 +571,7 @@ function scanHistoricalSignals(data) {
 
   return found;
 }
-async async function analyzeMarket() {
+async function analyzeMarket() {
   if (candles.length < 22) {
     setText("marketBias","NEED DATA");
     return;
