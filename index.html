@@ -76,6 +76,14 @@ button{font:inherit;color:inherit;cursor:pointer}.app{min-height:100vh;display:g
         <article class="panel"><div class="panel-head"><div class="panel-title">Smart Money Concepts</div><span class="tag">RULE-BASED SCANNER</span></div>
           <div class="row"><span>Liquidity sweep</span><strong id="sweep">--</strong></div><div class="row"><span>Fair Value Gap</span><strong id="fvg">--</strong></div><div class="row"><span>Order Block</span><strong id="orderBlock">--</strong></div><div class="row"><span>Break of Structure</span><strong id="bos">--</strong></div><div class="row"><span>Premium / Discount</span><strong id="premium">--</strong></div>
         </article>
+        <article class="panel"><div class="panel-head"><div class="panel-title">ICT + SMC + CRT PRO</div><span class="tag">CONFLUENCE CHECK</span></div>
+          <div class="row"><span>ICT · FVG / Order Block</span><strong id="ictStatus">--</strong></div>
+          <div class="row"><span>SMC · BOS / Liquidity</span><strong id="smcStatus">--</strong></div>
+          <div class="row"><span>CRT · Range sweep / reclaim</span><strong id="crtStatus">--</strong></div>
+          <div class="row"><span>CRT previous candle high</span><strong id="crtHigh">--</strong></div>
+          <div class="row"><span>CRT previous candle low</span><strong id="crtLow">--</strong></div>
+          <div class="small">CRT is operationalized here as a sweep beyond the previous completed candle range followed by a close back inside that range. ICT/SMC labels are rule-based approximations, not institutional order-flow data.</div>
+        </article>
       </div>
       <div class="stack">
         <article class="panel"><div class="panel-head"><div class="panel-title">Latest signal</div><span class="tag">MACHINE SCAN</span></div>
@@ -92,14 +100,14 @@ button{font:inherit;color:inherit;cursor:pointer}.app{min-height:100vh;display:g
 
   <section class="page" id="page-signals">
     <div class="grid metrics">
-      <article class="panel"><div class="metric-label">Current setup</div><div class="metric-value" id="signalPageState">WAIT</div><div class="metric-note">From existing SMC scanner</div></article>
+      <article class="panel"><div class="metric-label">Current setup</div><div class="metric-value" id="signalPageState">WAIT</div><div class="metric-note">ICT + SMC + CRT PRO engine</div></article>
       <article class="panel"><div class="metric-label">Entry</div><div class="metric-value gold" id="signalPageEntry">--</div><div class="metric-note">Current candle close</div></article>
       <article class="panel"><div class="metric-label">Stop loss</div><div class="metric-value red" id="signalPageSL">--</div><div class="metric-note">Structure-based estimate</div></article>
-      <article class="panel"><div class="metric-label">Signal engine</div><div class="metric-value" style="font-size:17px">SMC rules</div><div class="metric-note">External AI service not connected</div></article>
+      <article class="panel"><div class="metric-label">Signal engine</div><div class="metric-value" style="font-size:17px">PRO rules</div><div class="metric-note">ICT + SMC + CRT · no external AI</div></article>
     </div>
     <div class="grid split">
       <article class="panel"><div class="panel-head"><div class="panel-title">Signal history · current loaded candles</div><span class="tag">DETECTED SETUPS</span></div><div id="historyList" class="small">Waiting for candle history…</div></article>
-      <article class="panel"><div class="panel-title" style="margin-bottom:12px">Signal methodology</div><div class="row"><span>Trend filter</span><strong>SMA 9 / SMA 21</strong></div><div class="row"><span>Structure</span><strong>BOS + liquidity sweep</strong></div><div class="row"><span>Confluence</span><strong>FVG / OB / RSI</strong></div><div class="row"><span>Risk model</span><strong>Structure + 1R / 2R / 3R</strong></div><div class="notice" style="margin-top:13px">Strict mode: completed candles only, SMC trigger plus higher-timeframe alignment, and a three-candle reversal lock. Confluence scores are not win probabilities. WATCH BUY/SELL is not an entry. This remains a rule-based scanner, not a guarantee of profitable trades.</div></article>
+      <article class="panel"><div class="panel-title" style="margin-bottom:12px">Signal methodology</div><div class="row"><span>Trend filter</span><strong>SMA 9 / SMA 21</strong></div><div class="row"><span>Structure</span><strong>BOS + liquidity sweep</strong></div><div class="row"><span>ICT</span><strong>FVG / Order Block</strong></div><div class="row"><span>CRT</span><strong>Previous candle sweep + reclaim</strong></div><div class="row"><span>Risk model</span><strong>Structure + 1R / 2R / 3R</strong></div><div class="notice" style="margin-top:13px">PRO mode: completed candles only; confirmed entries require HTF alignment, an SMC BOS/liquidity trigger, directional ICT FVG/OB confluence, and a CRT range sweep/reclaim, plus a three-candle reversal lock. Confluence scores are not win probabilities. WATCH BUY/SELL is not an entry. This remains a rule-based scanner, not a guarantee of profitable trades.</div></article>
     </div>
   </section>
 
@@ -124,7 +132,7 @@ button{font:inherit;color:inherit;cursor:pointer}.app{min-height:100vh;display:g
       <article class="panel"><div class="metric-label">Losses · SL first</div><div class="metric-value red" id="trackLosses">0</div><div class="metric-note">Stop Loss reached before TP1</div></article>
       <article class="panel"><div class="metric-label">Win rate</div><div class="metric-value gold" id="trackWinRate">--</div><div class="metric-note" id="trackCompleted">0 completed · 0 pending</div></article>
     </div>
-    <article class="panel"><div class="panel-head"><div class="panel-title">Signal results · loaded candle history</div><span class="tag" id="trackPending">0 PENDING</span></div><div id="trackHistory" class="small">Waiting for candle history…</div><div class="notice" style="margin-top:14px">Backtest rule: a signal is a win if TP1 (1R) is reached before Stop Loss; it is a loss if Stop Loss is reached first. If both levels are touched in one candle, it is counted as a loss conservatively. Pending signals are excluded. Historical results use the selected timeframe only and do not reproduce the live higher-timeframe filter; treat them as a rough sample, not a verified live win rate.</div></article>
+    <article class="panel"><div class="panel-head"><div class="panel-title">Signal results · loaded candle history</div><span class="tag" id="trackPending">0 PENDING</span></div><div id="trackHistory" class="small">Waiting for candle history…</div><div class="notice" style="margin-top:14px">Backtest rule: a signal is a win if TP1 (1R) is reached before Stop Loss; it is a loss if Stop Loss is reached first. If both levels are touched in one candle, it is counted as a loss conservatively. Pending signals are excluded. Historical results still use the legacy SMC-only backtest and do not reproduce the live ICT + SMC + CRT PRO filters or higher-timeframe confirmation; they are not a PRO win-rate validation.</div></article>
   </section>
 
   <section class="page" id="page-analysis">
@@ -673,6 +681,12 @@ async function analyzeMarket() {
   const bearishSweep = sweep === "BUY-SIDE SWEPT";
   const bullishStructure = bos === "BULLISH BOS";
   const bearishStructure = bos === "BEARISH BOS";
+  // CRT: sweep the previous completed candle range, then close back inside it.
+  const crtBullish = last.l < prev.l && last.c > prev.l && last.c < prev.h;
+  const crtBearish = last.h > prev.h && last.c < prev.h && last.c > prev.l;
+  // ICT confluence is represented by the existing FVG / order-block approximations.
+  const ictBullish = fvg === "BULLISH FVG" || ob === "BULLISH OB";
+  const ictBearish = fvg === "BEARISH FVG" || ob === "BEARISH OB";
   const bullishCandle = last.c > last.o;
   const bearishCandle = last.c < last.o;
   const bullishRsi = rsi !== null && rsi >= 48 && rsi <= 68;
@@ -705,16 +719,27 @@ async function analyzeMarket() {
   if (bearishHigherConfirmed) sellScore += 2;
   if (mtfBias.h4 === "BULLISH") buyScore += 1;
   if (mtfBias.h4 === "BEARISH") sellScore += 1;
+  if (ictBullish) buyScore += 1;
+  if (ictBearish) sellScore += 1;
+  if (crtBullish) buyScore += 2;
+  if (crtBearish) sellScore += 2;
 
   const bullishTrigger = bullishStructure || bullishSweep;
   const bearishTrigger = bearishStructure || bearishSweep;
 
+  setText("ictStatus",ictBullish ? (fvg === "BULLISH FVG" ? "BULLISH FVG" : "BULLISH OB") :
+    ictBearish ? (fvg === "BEARISH FVG" ? "BEARISH FVG" : "BEARISH OB") : "NO CONFIRMATION");
+  setText("smcStatus",bullishTrigger ? "BULLISH STRUCTURE" : bearishTrigger ? "BEARISH STRUCTURE" : "NO TRIGGER");
+  setText("crtStatus",crtBullish ? "BULLISH RECLAIM" : crtBearish ? "BEARISH RECLAIM" : "NO RANGE SWEEP");
+  setText("crtHigh",fmt(prev.h));
+  setText("crtLow",fmt(prev.l));
+
   let signal = "WAIT";
   let potentialSignal = null;
 
-  if (buyScore >= 7 && bias === "BULLISH" && bullishTrigger && bullishHigherConfirmed && buyScore >= sellScore + 3) {
+  if (buyScore >= 8 && bias === "BULLISH" && bullishTrigger && ictBullish && crtBullish && bullishHigherConfirmed && buyScore >= sellScore + 3) {
     signal = "BUY";
-  } else if (sellScore >= 7 && bias === "BEARISH" && bearishTrigger && bearishHigherConfirmed && sellScore >= buyScore + 3) {
+  } else if (sellScore >= 8 && bias === "BEARISH" && bearishTrigger && ictBearish && crtBearish && bearishHigherConfirmed && sellScore >= buyScore + 3) {
     signal = "SELL";
   } else if (buyScore >= 2 && buyScore > sellScore &&
              (bias === "BULLISH" || fvg === "BULLISH FVG" || ob === "BULLISH OB")) {
@@ -774,6 +799,10 @@ async function analyzeMarket() {
   if (bearishRsi) sellFactors.push("RSI momentum supportive");
   if (bullishCandle) buyFactors.push("bullish candle close");
   if (bearishCandle) sellFactors.push("bearish candle close");
+  if (ictBullish) buyFactors.push("ICT bullish FVG/OB");
+  if (ictBearish) sellFactors.push("ICT bearish FVG/OB");
+  if (crtBullish) buyFactors.push("CRT bullish range reclaim");
+  if (crtBearish) sellFactors.push("CRT bearish range reclaim");
 
   const signalDetail = signal === "BUY"
     ? "BUY confirmed • " + buyFactors.join(" · ") + " • Bull " + buyScore + "/13"
@@ -787,7 +816,7 @@ async function analyzeMarket() {
             ? "WATCH SELL only — no entry yet. " + (sellFactors.join(" · ") || "Waiting for bearish confirmation.")
             : !bullishHigherConfirmed && !bearishHigherConfirmed
               ? "WAIT — higher-timeframe trend is neutral or unavailable. Bull factors: " + (buyFactors.join(" · ") || "none") + " | Bear factors: " + (sellFactors.join(" · ") || "none")
-              : "WAIT — no complete BOS/liquidity setup. Bull factors: " + (buyFactors.join(" · ") || "none") + " | Bear factors: " + (sellFactors.join(" · ") || "none");
+              : "WAIT — PRO requires HTF alignment + SMC trigger + ICT FVG/OB + CRT range reclaim. Bull factors: " + (buyFactors.join(" · ") || "none") + " | Bear factors: " + (sellFactors.join(" · ") || "none");
 
   updateSignal(displaySignal,last.c,avgRange,buyScore,sellScore,signalDetail,candles,ob,before,sweep);
 }
@@ -825,7 +854,7 @@ async function updateMTF(market=currentMarket) {
 
 function updateSignal(signal,entry,range,buyScore,sellScore,detail="",sourceCandles=[],ob="NONE",previousCandle=null,sweep="NONE") {
   const el = $("signal");
-  const scoreMax = 13;
+  const scoreMax = 16;
   setText("bullScore",Math.min(100,Math.round(buyScore/scoreMax*100)) + " / 100");
   setText("bearScore",Math.min(100,Math.round(sellScore/scoreMax*100)) + " / 100");
   el.textContent = signal;
