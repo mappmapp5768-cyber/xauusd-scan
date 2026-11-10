@@ -738,15 +738,29 @@ async function analyzeMarket() {
   let signal = "WAIT";
   let potentialSignal = null;
 
-  if (buyScore >= 8 && bias === "BULLISH" && bullishTrigger && ictBullish && crtBullish && bullishHigherConfirmed && buyScore >= sellScore + 3) {
+  // Balanced PRO rules: keep a real SMC trigger and directional trend,
+  // but accept either ICT or CRT confirmation instead of requiring both.
+  // A neutral higher timeframe is allowed; an opposing higher timeframe blocks entry.
+  const buyConfirmation = ictBullish || crtBullish;
+  const sellConfirmation = ictBearish || crtBearish;
+  const higherAllowsBuy = higherBias !== "BEARISH";
+  const higherAllowsSell = higherBias !== "BULLISH";
+  const MIN_SIGNAL_SCORE = 7;
+  const MIN_SCORE_MARGIN = 2;
+
+  if (buyScore >= MIN_SIGNAL_SCORE && bias === "BULLISH" &&
+      bullishTrigger && buyConfirmation && higherAllowsBuy &&
+      buyScore >= sellScore + MIN_SCORE_MARGIN) {
     signal = "BUY";
-  } else if (sellScore >= 8 && bias === "BEARISH" && bearishTrigger && ictBearish && crtBearish && bearishHigherConfirmed && sellScore >= buyScore + 3) {
+  } else if (sellScore >= MIN_SIGNAL_SCORE && bias === "BEARISH" &&
+      bearishTrigger && sellConfirmation && higherAllowsSell &&
+      sellScore >= buyScore + MIN_SCORE_MARGIN) {
     signal = "SELL";
-  } else if (buyScore >= 2 && buyScore > sellScore &&
-             (bias === "BULLISH" || fvg === "BULLISH FVG" || ob === "BULLISH OB")) {
+  } else if (buyScore >= 3 && buyScore > sellScore &&
+             bias === "BULLISH" && higherAllowsBuy) {
     potentialSignal = "BUY";
-  } else if (sellScore >= 2 && sellScore > buyScore &&
-             (bias === "BEARISH" || fvg === "BEARISH FVG" || ob === "BEARISH OB")) {
+  } else if (sellScore >= 3 && sellScore > buyScore &&
+             bias === "BEARISH" && higherAllowsSell) {
     potentialSignal = "SELL";
   }
 
@@ -773,19 +787,18 @@ async function analyzeMarket() {
   const sellMissing = [];
   if (bias !== "BULLISH") buyMissing.push(currentTF.toUpperCase() + " trend must be BULLISH");
   if (!bullishTrigger) buyMissing.push("SMC bullish BOS or sell-side liquidity sweep");
-  if (!ictBullish) buyMissing.push("ICT bullish FVG or Order Block");
-  if (!crtBullish) buyMissing.push("CRT sweep below previous candle low, then close back inside range");
-  if (!bullishHigherConfirmed) buyMissing.push(higherTF + " bullish confirmation");
-  if (buyScore < 8) buyMissing.push("Bull score needs 8+ (currently " + buyScore + ")");
-  if (buyScore < sellScore + 3) buyMissing.push("Bull score must lead Bear by at least 3");
+  if (!bullishTrigger) buyMissing.push("Need bullish BOS or sell-side liquidity sweep");
+  if (!buyConfirmation) buyMissing.push("Need either bullish ICT FVG/OB or CRT reclaim");
+  if (higherBias === "BEARISH") buyMissing.push(higherTF + " is bearish (opposes BUY)");
+  if (buyScore < MIN_SIGNAL_SCORE) buyMissing.push("Bull score needs " + MIN_SIGNAL_SCORE + "+ (currently " + buyScore + ")");
+  if (buyScore < sellScore + MIN_SCORE_MARGIN) buyMissing.push("Bull score must lead Bear by " + MIN_SCORE_MARGIN + "+");
 
   if (bias !== "BEARISH") sellMissing.push(currentTF.toUpperCase() + " trend must be BEARISH");
-  if (!bearishTrigger) sellMissing.push("SMC bearish BOS or buy-side liquidity sweep");
-  if (!ictBearish) sellMissing.push("ICT bearish FVG or Order Block");
-  if (!crtBearish) sellMissing.push("CRT sweep above previous candle high, then close back inside range");
-  if (!bearishHigherConfirmed) sellMissing.push(higherTF + " bearish confirmation");
-  if (sellScore < 8) sellMissing.push("Bear score needs 8+ (currently " + sellScore + ")");
-  if (sellScore < buyScore + 3) sellMissing.push("Bear score must lead Bull by at least 3");
+  if (!bearishTrigger) sellMissing.push("Need bearish BOS or buy-side liquidity sweep");
+  if (!sellConfirmation) sellMissing.push("Need either bearish ICT FVG/OB or CRT reclaim");
+  if (higherBias === "BULLISH") sellMissing.push(higherTF + " is bullish (opposes SELL)");
+  if (sellScore < MIN_SIGNAL_SCORE) sellMissing.push("Bear score needs " + MIN_SIGNAL_SCORE + "+ (currently " + sellScore + ")");
+  if (sellScore < buyScore + MIN_SCORE_MARGIN) sellMissing.push("Bear score must lead Bull by " + MIN_SCORE_MARGIN + "+");
 
   const waitReasonDetail = signal === "BUY" || signal === "SELL"
     ? signal + " confirmed: all PRO entry conditions passed."
@@ -846,7 +859,7 @@ async function analyzeMarket() {
             ? "WATCH SELL only — no entry yet. " + (sellFactors.join(" · ") || "Waiting for bearish confirmation.")
             : !bullishHigherConfirmed && !bearishHigherConfirmed
               ? "WAIT — higher-timeframe trend is neutral or unavailable. Bull factors: " + (buyFactors.join(" · ") || "none") + " | Bear factors: " + (sellFactors.join(" · ") || "none")
-              : "WAIT — PRO requires HTF alignment + SMC trigger + ICT FVG/OB + CRT range reclaim. Bull factors: " + (buyFactors.join(" · ") || "none") + " | Bear factors: " + (sellFactors.join(" · ") || "none");
+              : "WAIT — PRO requires trend + SMC trigger + either ICT or CRT confirmation, score threshold and no opposing HTF. Bull factors: " + (buyFactors.join(" · ") || "none") + " | Bear factors: " + (sellFactors.join(" · ") || "none");
 
   updateSignal(displaySignal,last.c,avgRange,buyScore,sellScore,signalDetail,candles,ob,before,sweep,waitReasonDetail);
 }
