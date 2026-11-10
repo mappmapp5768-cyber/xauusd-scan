@@ -632,21 +632,79 @@ async function analyzeMarket() {
 
   setText("sweep",sweep);
 
-  // Fair Value Gap
-  const candle3 = candles[candles.length-3];
+  // ICT Fair Value Gap: scan recent completed 3-candle formations.
+  // Ignore tiny gaps and reject zones that have already been fully mitigated.
   let fvg = "NONE";
+  const fvgStart = Math.max(2, candles.length - 12);
+  const fvgMinGap = Math.max(avgRange * 0.08, 0.01);
+  for (let i = candles.length - 1; i >= fvgStart; i--) {
+    const left = candles[i - 2];
+    const right = candles[i];
+    const bullGap = right.l - left.h;
+    const bearGap = left.l - right.h;
 
-  if (last.l > candle3.h) fvg = "BULLISH FVG";
-  else if (last.h < candle3.l) fvg = "BEARISH FVG";
+    if (bullGap >= fvgMinGap) {
+      const zoneLow = left.h;
+      const zoneHigh = right.l;
+      let invalidated = false;
+      for (let j = i + 1; j < candles.length; j++) {
+        if (candles[j].l <= zoneLow) { invalidated = true; break; }
+      }
+      const retested = last.l <= zoneHigh && last.h >= zoneLow;
+      const holding = last.c > zoneLow;
+      if (!invalidated && (retested || holding)) { fvg = "BULLISH FVG"; break; }
+    }
 
+    if (bearGap >= fvgMinGap) {
+      const zoneLow = right.h;
+      const zoneHigh = left.l;
+      let invalidated = false;
+      for (let j = i + 1; j < candles.length; j++) {
+        if (candles[j].h >= zoneHigh) { invalidated = true; break; }
+      }
+      const retested = last.h >= zoneLow && last.l <= zoneHigh;
+      const holding = last.c < zoneHigh;
+      if (!invalidated && (retested || holding)) { fvg = "BEARISH FVG"; break; }
+    }
+  }
   setText("fvg",fvg);
 
-  // Order Block approximation
+  // ICT Order Block: last opposing candle before a strong displacement
+  // through the preceding 10-candle swing. Require a retest and no close
+  // beyond the OB's invalidation edge.
   let ob = "NONE";
-  const before = candles[candles.length-2];
+  const obStart = Math.max(11, candles.length - 14);
+  for (let i = candles.length - 1; i >= obStart; i--) {
+    const impulse = candles[i];
+    const origin = candles[i - 1];
+    const swingHigh = Math.max(...candles.slice(Math.max(0, i - 11), i - 1).map(c => c.h));
+    const swingLow = Math.min(...candles.slice(Math.max(0, i - 11), i - 1).map(c => c.l));
+    const impulseRange = impulse.h - impulse.l;
+    const impulseBody = Math.abs(impulse.c - impulse.o);
+    const displacement = impulseRange >= avgRange && impulseBody >= avgRange * 0.5;
 
-  if (last.c > before.h && before.c < before.o) ob = "BULLISH OB";
-  else if (last.c < before.l && before.c > before.o) ob = "BEARISH OB";
+    if (displacement && origin.c < origin.o && impulse.c > swingHigh) {
+      let invalidated = false;
+      for (let j = i + 1; j < candles.length; j++) {
+        if (candles[j].c < origin.l) { invalidated = true; break; }
+      }
+      const zoneLow = origin.l;
+      const zoneHigh = origin.o;
+      const retested = last.l <= zoneHigh && last.h >= zoneLow && last.c >= zoneLow;
+      if (!invalidated && retested) { ob = "BULLISH OB"; break; }
+    }
+
+    if (displacement && origin.c > origin.o && impulse.c < swingLow) {
+      let invalidated = false;
+      for (let j = i + 1; j < candles.length; j++) {
+        if (candles[j].c > origin.h) { invalidated = true; break; }
+      }
+      const zoneLow = origin.o;
+      const zoneHigh = origin.h;
+      const retested = last.h >= zoneLow && last.l <= zoneHigh && last.c <= zoneHigh;
+      if (!invalidated && retested) { ob = "BEARISH OB"; break; }
+    }
+  }
 
   setText("orderBlock",ob);
 
@@ -682,9 +740,13 @@ async function analyzeMarket() {
   const bearishSweep = sweep === "BUY-SIDE SWEPT";
   const bullishStructure = bos === "BULLISH BOS";
   const bearishStructure = bos === "BEARISH BOS";
-  // CRT: sweep the previous completed candle range, then close back inside it.
-  const crtBullish = last.l < prev.l && last.c > prev.l && last.c < prev.h;
-  const crtBearish = last.h > prev.h && last.c < prev.h && last.c > prev.l;
+  // CRT: sweep the previous completed candle's range and reclaim its
+  // midpoint in the reversal direction before the candle closes.
+  const crtMidpoint = (prev.h + prev.l) / 2;
+  const crtBullish = last.l < prev.l && last.c > prev.l &&
+    last.c > crtMidpoint && last.c < prev.h;
+  const crtBearish = last.h > prev.h && last.c < prev.h &&
+    last.c < crtMidpoint && last.c > prev.l;
   // ICT confluence is represented by the existing FVG / order-block approximations.
   const ictBullish = fvg === "BULLISH FVG" || ob === "BULLISH OB";
   const ictBearish = fvg === "BEARISH FVG" || ob === "BEARISH OB";
@@ -786,7 +848,6 @@ async function analyzeMarket() {
   const buyMissing = [];
   const sellMissing = [];
   if (bias !== "BULLISH") buyMissing.push(currentTF.toUpperCase() + " trend must be BULLISH");
-  if (!bullishTrigger) buyMissing.push("SMC bullish BOS or sell-side liquidity sweep");
   if (!bullishTrigger) buyMissing.push("Need bullish BOS or sell-side liquidity sweep");
   if (!buyConfirmation) buyMissing.push("Need either bullish ICT FVG/OB or CRT reclaim");
   if (higherBias === "BEARISH") buyMissing.push(higherTF + " is bearish (opposes BUY)");
