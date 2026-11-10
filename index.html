@@ -802,7 +802,9 @@ async function analyzeMarket() {
     ? {type:signal, potential:false, price:last.c, time:last.t}
     : null;
 
-  const displaySignal = signal;
+  const displaySignal = signal === "WAIT" && !reversalBlocked && potentialSignal
+    ? "WATCH " + potentialSignal
+    : signal;
 
   const buyFactors = [];
   const sellFactors = [];
