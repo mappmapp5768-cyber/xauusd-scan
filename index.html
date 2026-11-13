@@ -16,7 +16,8 @@ button{font:inherit;color:inherit;cursor:pointer}.app{min-height:100vh;display:g
 .page{display:none}.page.active{display:block}.grid{display:grid;gap:13px}.metrics{grid-template-columns:repeat(4,minmax(0,1fr));margin-bottom:14px}.panel{background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:16px;min-width:0}.metric-label{font-size:10px;color:var(--muted);letter-spacing:.12em;text-transform:uppercase}.metric-value{font-size:24px;font-weight:750;margin-top:6px;letter-spacing:-.03em}.metric-note{font-size:11px;color:var(--muted);margin-top:4px}.gold{color:var(--gold)}.green{color:var(--green)}.red{color:var(--red)}.muted{color:var(--muted)}
 .split{grid-template-columns:minmax(0,1.8fr) minmax(280px,1fr);align-items:start}.stack{display:grid;gap:13px}.panel-head{display:flex;justify-content:space-between;align-items:center;gap:12px;margin-bottom:13px}.panel-title{font-size:13px;font-weight:750;letter-spacing:.02em}.panel-kicker{font-size:10px;color:var(--muted)}
 .pills{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:12px}.pill-btn{background:#111c2e;border:1px solid var(--line);padding:6px 10px;border-radius:7px;font-size:11px;color:#9eacc1}.pill-btn.active,.pill-btn:hover{border-color:#8a6a2c;color:var(--gold);background:#292315}
-.tv-chart-wrap{width:100%;height:500px;min-width:0;overflow:hidden;border-radius:9px;background:#080d18}.tv-chart-wrap iframe{border:0}.small{font-size:11px;color:var(--muted);line-height:1.6}.row{display:flex;justify-content:space-between;align-items:center;gap:12px;padding:9px 0;border-bottom:1px solid var(--line);font-size:12px}.row:last-child{border-bottom:0}.tag{padding:3px 8px;border-radius:5px;background:var(--panel2);font-size:10px;font-weight:750}.buy{color:var(--green)}.sell{color:var(--red)}.neutral{color:var(--gold)}
+.tv-chart-wrap{width:100%;height:500px;min-width:0;overflow:hidden;border-radius:9px;background:#080d18}.tv-chart-wrap iframe{border:0}
+.small{font-size:11px;color:var(--muted);line-height:1.6}.row{display:flex;justify-content:space-between;align-items:center;gap:12px;padding:9px 0;border-bottom:1px solid var(--line);font-size:12px}.row:last-child{border-bottom:0}.tag{padding:3px 8px;border-radius:5px;background:var(--panel2);font-size:10px;font-weight:750}.buy{color:var(--green)}.sell{color:var(--red)}.neutral{color:var(--gold)}
 .signal-box{text-align:center;background:linear-gradient(145deg,#17243a,#111a2b);border:1px solid #2a3b57;border-radius:10px;padding:18px;margin-bottom:12px}.signal-box strong{font-size:27px;letter-spacing:.04em}.wait-detail{margin-top:12px;padding:10px;border:1px solid #344762;border-radius:8px;background:#0d1727;color:#c4d0e2;text-align:left;font-size:11px;line-height:1.65;white-space:pre-line}.wait-detail strong{font-size:11px;letter-spacing:0;color:#f5c451}.signal-levels{display:grid;grid-template-columns:repeat(2,1fr);gap:8px}.level{background:var(--panel2);border-radius:8px;padding:10px}.level .metric-value{font-size:16px;margin-top:3px}
 .notice{border:1px solid #5a4824;background:#211d13;color:#e8d7ad;padding:12px;border-radius:9px;font-size:11px;line-height:1.6}.empty{border:1px dashed #33445f;border-radius:10px;padding:25px 16px;text-align:center;color:var(--muted)}.empty-icon{font-size:24px;margin-bottom:7px}.empty strong{display:block;color:var(--text);font-size:13px;margin-bottom:4px}
 .mtf-grid{display:grid;grid-template-columns:repeat(5,1fr);gap:8px}.mtf-item{background:var(--panel2);border-radius:8px;padding:11px;text-align:center}.mtf-item strong{display:block;font-size:13px;margin-top:5px}
@@ -35,6 +36,8 @@ button{font:inherit;color:inherit;cursor:pointer}.app{min-height:100vh;display:g
 .news-toolbar{display:flex;align-items:center;gap:10px;flex-wrap:wrap}
 .news-toolbar button{background:var(--panel2);border:1px solid var(--line);border-radius:7px;padding:7px 10px;font-size:11px}
 </style>
+<!-- TradingView Chart Widget -->
+<script type="text/javascript" src="https://s3.tradingview.com/tv.js"></script>
 </head>
 <body>
 
@@ -61,23 +64,23 @@ button{font:inherit;color:inherit;cursor:pointer}.app{min-height:100vh;display:g
 
  <section class="page active" id="page-overview">
  <div class="grid metrics">
- <article class="panel"><div class="metric-label" id="priceLabel">XAUUSD SPOT PRICE</div><div class="metric-value gold" id="price">Loading…</div><div class="metric-note" id="priceTime">From Binance API</div></article>
- <article class="panel"><div class="metric-label">Market bias</div><div class="metric-value" id="marketBias">--</div><div class="metric-note" id="biasDescription">Waiting for candles</div></article>
- <article class="panel"><div class="metric-label">RSI · 14</div><div class="metric-value" id="rsiValue">--</div><div class="metric-note" id="rsiDescription">Waiting for data</div></article>
- <article class="panel"><div class="metric-label">Active timeframe</div><div class="metric-value gold" id="activeTF">M15</div><div class="metric-note" id="candleCount">Loading candles…</div></article>
+ <article class="panel"><div class="metric-label" id="priceLabel">XAUUSD SPOT PRICE</div><div class="metric-value gold" id="price">Loading…</div><div class="metric-note" id="priceTime">Binance Spot · Updating…</div></article>
+ <article class="panel"><div class="metric-label">Market Bias</div><div class="metric-value" id="marketBias">--</div><div class="metric-note" id="biasDescription">SMA 9 / SMA 21</div></article>
+ <article class="panel"><div class="metric-label">RSI · 14</div><div class="metric-value" id="rsiValue">--</div><div class="metric-note" id="rsiDescription">Neutral zone</div></article>
+ <article class="panel"><div class="metric-label">Active Timeframe</div><div class="metric-value gold" id="activeTF">M15</div><div class="metric-note" id="candleCount">Loading candles…</div></article>
  </div>
 
  <div class="grid split">
  <div class="stack">
  <article class="panel">
- <div class="panel-head"><div class="panel-title" id="chartTitle">XAUUSD · PRICE ACTION</div><span class="panel-kicker" id="chartStatus">Loading TradingView…</span></div>
+ <div class="panel-head"><div class="panel-title" id="chartTitle">XAUUSD · PRICE ACTION</div><span class="panel-kicker" id="chartStatus">Loading chart…</span></div>
 
  <div class="pills"><button class="pill-btn active" data-market="xau">GOLD · XAUUSD</button><button class="pill-btn" data-market="bitcoin">BITCOIN · BTCUSD</button></div>
  <div class="pills"><button class="pill-btn" data-tf="5m">M5</button><button class="pill-btn active" data-tf="15m">M15</button><button class="pill-btn" data-tf="30m">M30</button><button class="pill-btn" data-tf="60m">H1</button><button class="pill-btn" data-tf="240m">H4</button></div>
 
  <div class="tv-chart-wrap"><div id="tradingview_chart"></div></div>
 
- <div class="small">⚠️ Chart from TradingView for visual reference only. Scanner data uses Binance prices — may differ slightly from your broker. Signals use completed candles only.</div>
+ <div class="small">📊 Chart from TradingView — for visual reference only.<br>✅ All prices & calculations below use Binance API data (single source). Values may differ slightly from your broker.</div>
  </article>
 
  <article class="panel"><div class="panel-head"><div class="panel-title">Smart Money Concepts</div><span class="tag">RULE-BASED SCANNER</span></div>
@@ -94,16 +97,16 @@ button{font:inherit;color:inherit;cursor:pointer}.app{min-height:100vh;display:g
  <div class="row"><span>CRT · Sweep & Reclaim</span><strong id="crtStatus">--</strong></div>
  <div class="row"><span>CRT Prev High</span><strong id="crtHigh">--</strong></div>
  <div class="row"><span>CRT Prev Low</span><strong id="crtLow">--</strong></div>
- <div class="small">⚠️ Requires 25+ completed candles. CRT = Sweep + Reclaim. Approximations only — not institutional data.</div>
+ <div class="small">⚠️ Requires 25+ completed candles. All data sourced from Binance API only.</div>
  </article>
  </div>
 
  <div class="stack">
  <article class="panel"><div class="panel-head"><div class="panel-title">Latest Signal</div><span class="tag">MACHINE SCAN</span></div>
- <div class="signal-box"><div class="metric-label">SCANNER RESULT</div><strong id="signal" class="neutral">WAIT</strong><div class="small" id="signalReason">Waiting for candle data</div><div class="wait-detail" id="waitReasonDetail">⏳ Waiting for completed candles. Each timeframe must close before analysis begins. Prices from Binance API.</div></div>
+ <div class="signal-box"><div class="metric-label">SCANNER RESULT</div><strong id="signal" class="neutral">WAIT</strong><div class="small" id="signalReason">Waiting for candle analysis…</div><div class="wait-detail" id="waitReasonDetail">⏳ Waiting for completed candles. Each timeframe must close before analysis begins.<br><br>📡 Data source: Binance API (XAUUSDT)</div></div>
  <div class="row"><span>Bull Confluence Score</span><strong class="buy" id="bullScore">0 / 100</strong></div>
  <div class="row"><span>Bear Confluence Score</span><strong class="sell" id="bearScore">0 / 100</strong></div>
- <div class="row"><span>Higher Timeframe Filter</span><strong id="signalHTF">Waiting…</strong></div>
+ <div class="row"><span>Higher Timeframe Filter</span><strong id="signalHTF">Checking…</strong></div>
  <div class="row"><span>Entry</span><strong id="entry">--</strong></div>
  <div class="row"><span>Stop Loss</span><strong class="red" id="sl">--</strong></div>
  <div class="row"><span>Take Profit 1</span><strong class="green" id="tp1">--</strong></div>
@@ -111,7 +114,7 @@ button{font:inherit;color:inherit;cursor:pointer}.app{min-height:100vh;display:g
  <div class="row"><span>Take Profit 3</span><strong class="green" id="tp3">--</strong></div>
  </article>
 
- <article class="panel"><div class="panel-head"><div class="panel-title">Market Range</div><span class="panel-kicker">Reference only</span></div>
+ <article class="panel"><div class="panel-head"><div class="panel-title">Market Range</div><span class="panel-kicker">From Binance API</span></div>
  <div class="row"><span>Recent High</span><strong id="recentHigh">--</strong></div>
  <div class="row"><span>Recent Low</span><strong id="recentLow">--</strong></div>
  <div class="row"><span>Avg Candle Range</span><strong id="avgRange">--</strong></div>
@@ -122,5 +125,4 @@ button{font:inherit;color:inherit;cursor:pointer}.app{min-height:100vh;display:g
  </section>
 
  <section class="page" id="page-signals">
- <h2 class="page-title">AI Signals</h2>
- <div class="notice">⚠️ This section is for future development. Currently using rule
+ <h2 class="page-title">
