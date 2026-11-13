@@ -50,21 +50,21 @@ button{font:inherit;color:inherit;cursor:pointer}.app{min-height:100vh;display:g
  <button data-page="analysis"><span class="nav-icon">⌗</span><span class="nav-text">Market Analysis</span></button>
  </nav></div>
 
- <div class="side-bottom"><div class="feed-card"><strong><span class="live-dot" id="globalLiveDot"></span>DATA CONNECTION</strong><p id="sideFeedStatus">Ready — TradingView chart active</p></div></div>
+ <div class="side-bottom"><div class="feed-card"><strong><span class="live-dot" id="globalLiveDot"></span>DATA CONNECTION</strong><p id="sideFeedStatus">Connecting to Binance API…</p></div></div>
 </aside>
 
 <main class="main">
  <div class="topbar">
  <div><div class="eyebrow">Trading intelligence terminal</div><h1 class="page-title" id="pageTitle">Market Overview</h1></div>
- <div class="top-actions"><span class="selectlike"><span class="live-dot"></span><span id="connection">TradingView Ready</span></span><button class="top-btn" id="refreshBtn">↻ Refresh data</button><span class="selectlike" id="clock">--:--:--</span></div>
+ <div class="top-actions"><span class="selectlike"><span class="live-dot"></span><span id="connection">Connecting…</span></span><button class="top-btn" id="refreshBtn">↻ Refresh data</button><span class="selectlike" id="clock">--:--:--</span></div>
  </div>
 
  <section class="page active" id="page-overview">
  <div class="grid metrics">
- <article class="panel"><div class="metric-label" id="priceLabel">XAUUSD SPOT PRICE</div><div class="metric-value gold" id="price">Loading…</div><div class="metric-note" id="priceTime">From Investing.com API</div></article>
+ <article class="panel"><div class="metric-label" id="priceLabel">XAUUSD SPOT PRICE</div><div class="metric-value gold" id="price">Loading…</div><div class="metric-note" id="priceTime">From Binance API</div></article>
  <article class="panel"><div class="metric-label">Market bias</div><div class="metric-value" id="marketBias">--</div><div class="metric-note" id="biasDescription">Waiting for candles</div></article>
  <article class="panel"><div class="metric-label">RSI · 14</div><div class="metric-value" id="rsiValue">--</div><div class="metric-note" id="rsiDescription">Waiting for data</div></article>
- <article class="panel"><div class="metric-label">Active timeframe</div><div class="metric-value gold" id="activeTF">M15</div><div class="metric-note" id="candleCount">Use TradingView chart</div></article>
+ <article class="panel"><div class="metric-label">Active timeframe</div><div class="metric-value gold" id="activeTF">M15</div><div class="metric-note" id="candleCount">Loading candles…</div></article>
  </div>
 
  <div class="grid split">
@@ -75,13 +75,13 @@ button{font:inherit;color:inherit;cursor:pointer}.app{min-height:100vh;display:g
  <div class="pills"><button class="pill-btn active" data-market="xau">GOLD · XAUUSD</button><button class="pill-btn" data-market="bitcoin">BITCOIN · BTCUSD</button></div>
  <div class="pills"><button class="pill-btn" data-tf="5m">M5</button><button class="pill-btn active" data-tf="15m">M15</button><button class="pill-btn" data-tf="30m">M30</button><button class="pill-btn" data-tf="60m">H1</button><button class="pill-btn" data-tf="240m">H4</button></div>
 
- <div class="tv-chart-wrap"><div id="tradingview_chart" style="width:100%;height:100%"></div></div>
+ <div class="tv-chart-wrap"><div id="tradingview_chart"></div></div>
 
- <div class="small">⚠️ Chart data from TradingView. Prices may differ slightly from your broker. Complete candles only — signals ignore forming candles.</div>
+ <div class="small">⚠️ Chart from TradingView for visual reference only. Scanner data uses Binance prices — may differ slightly from your broker. Signals use completed candles only.</div>
  </article>
 
  <article class="panel"><div class="panel-head"><div class="panel-title">Smart Money Concepts</div><span class="tag">RULE-BASED SCANNER</span></div>
- <div class="row"><span>Liquidity sweep</span><strong id="sweep">--</strong></div>
+ <div class="row"><span>Liquidity Sweep</span><strong id="sweep">--</strong></div>
  <div class="row"><span>Fair Value Gap</span><strong id="fvg">--</strong></div>
  <div class="row"><span>Order Block</span><strong id="orderBlock">--</strong></div>
  <div class="row"><span>Break of Structure</span><strong id="bos">--</strong></div>
@@ -91,27 +91,36 @@ button{font:inherit;color:inherit;cursor:pointer}.app{min-height:100vh;display:g
  <article class="panel"><div class="panel-head"><div class="panel-title">ICT + SMC + CRT PRO</div><span class="tag">CONFLUENCE CHECK</span></div>
  <div class="row"><span>ICT · FVG / Order Block</span><strong id="ictStatus">--</strong></div>
  <div class="row"><span>SMC · BOS / Liquidity</span><strong id="smcStatus">--</strong></div>
- <div class="row"><span>CRT · Range sweep / reclaim</span><strong id="crtStatus">--</strong></div>
- <div class="row"><span>CRT previous candle high</span><strong id="crtHigh">--</strong></div>
- <div class="row"><span>CRT previous candle low</span><strong id="crtLow">--</strong></div>
- <div class="small">⚠️ Scanner needs at least 25 completed candles. CRT = sweep + reclaim. Approximations only — not institutional data.</div>
+ <div class="row"><span>CRT · Sweep & Reclaim</span><strong id="crtStatus">--</strong></div>
+ <div class="row"><span>CRT Prev High</span><strong id="crtHigh">--</strong></div>
+ <div class="row"><span>CRT Prev Low</span><strong id="crtLow">--</strong></div>
+ <div class="small">⚠️ Requires 25+ completed candles. CRT = Sweep + Reclaim. Approximations only — not institutional data.</div>
  </article>
  </div>
 
  <div class="stack">
- <article class="panel"><div class="panel-head"><div class="panel-title">Latest signal</div><span class="tag">MACHINE SCAN</span></div>
- <div class="signal-box"><div class="metric-label">SCANNER RESULT</div><strong id="signal" class="neutral">WAIT</strong><div class="small" id="signalReason">Waiting for candle data</div><div class="wait-detail" id="waitReasonDetail" aria-live="polite">💡 Use TradingView chart for live candles. Scanner works on completed candles only — switch timeframes and wait for candles to close.</div></div>
- <div class="row"><span>Bull confluence score</span><strong class="buy" id="bullScore">0 / 100</strong></div>
- <div class="row"><span>Bear confluence score</span><strong class="sell" id="bearScore">0 / 100</strong></div>
- <div class="row"><span>Higher-timeframe filter</span><strong id="signalHTF">Waiting…</strong></div>
-
- <div class="row"><span id="entryLabel">Entry</span><strong id="entry">--</strong></div>
- <div class="row"><span id="slLabel">Stop Loss</span><strong class="red" id="sl">--</strong></div>
- <div class="row"><span id="tp1Label">Take Profit 1</span><strong class="green" id="tp1">--</strong></div>
- <div class="row"><span id="tp2Label">Take Profit 2</span><strong class="green" id="tp2">--</strong></div>
- <div class="row"><span id="tp3Label">Take Profit 3</span><strong class="green" id="tp3">--</strong></div>
+ <article class="panel"><div class="panel-head"><div class="panel-title">Latest Signal</div><span class="tag">MACHINE SCAN</span></div>
+ <div class="signal-box"><div class="metric-label">SCANNER RESULT</div><strong id="signal" class="neutral">WAIT</strong><div class="small" id="signalReason">Waiting for candle data</div><div class="wait-detail" id="waitReasonDetail">⏳ Waiting for completed candles. Each timeframe must close before analysis begins. Prices from Binance API.</div></div>
+ <div class="row"><span>Bull Confluence Score</span><strong class="buy" id="bullScore">0 / 100</strong></div>
+ <div class="row"><span>Bear Confluence Score</span><strong class="sell" id="bearScore">0 / 100</strong></div>
+ <div class="row"><span>Higher Timeframe Filter</span><strong id="signalHTF">Waiting…</strong></div>
+ <div class="row"><span>Entry</span><strong id="entry">--</strong></div>
+ <div class="row"><span>Stop Loss</span><strong class="red" id="sl">--</strong></div>
+ <div class="row"><span>Take Profit 1</span><strong class="green" id="tp1">--</strong></div>
+ <div class="row"><span>Take Profit 2</span><strong class="green" id="tp2">--</strong></div>
+ <div class="row"><span>Take Profit 3</span><strong class="green" id="tp3">--</strong></div>
  </article>
 
- <article class="panel"><div class="panel-head"><div class="panel-title">Market range</div><span class="panel-kicker">Reference only</span></div>
- <div class="row"><span>Recent high</span><strong id="recentHigh">--</strong></div>
- <div class="row"><span
+ <article class="panel"><div class="panel-head"><div class="panel-title">Market Range</div><span class="panel-kicker">Reference only</span></div>
+ <div class="row"><span>Recent High</span><strong id="recentHigh">--</strong></div>
+ <div class="row"><span>Recent Low</span><strong id="recentLow">--</strong></div>
+ <div class="row"><span>Avg Candle Range</span><strong id="avgRange">--</strong></div>
+ <div class="row"><span>Last Update</span><strong id="lastUpdate">--</strong></div>
+ </article>
+ </div>
+ </div>
+ </section>
+
+ <section class="page" id="page-signals">
+ <h2 class="page-title">AI Signals</h2>
+ <div class="notice">⚠️ This section is for future development. Currently using rule
